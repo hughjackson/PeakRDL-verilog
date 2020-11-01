@@ -1,0 +1,2 @@
+recursive-include peakrdl/verilog/templates *
+recursive-exclude test *
