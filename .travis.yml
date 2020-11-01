@@ -8,6 +8,7 @@ python:
 script:
   - python -m pip install .
   - cd test
+  - ./mintest.py basic test/testcases/basic.rdl
 
 after_success:
   - coveralls
@@ -18,7 +19,7 @@ stages:
   # and from your repository (e.g. not PRs).
   # Also allows alpha/beta releases such as "v1.2.3b2"
   - name: deploy
-    if: repo = SystemRDL/PeakRDL-verilog AND tag =~ ^v\d+\.\d+\.\w+$
+    if: repo = hughjackson/PeakRDL-verilog AND tag =~ ^v\d+\.\d+\.\w+$
 
 jobs:
   include:
