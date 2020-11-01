@@ -128,7 +128,6 @@ class VerilogExporter:
             'isinstance': isinstance,
             'signal': self._get_signal_prefix,
             'get_inst_name': self._get_inst_name,
-            'get_field_name': self._get_field_name,
             'get_field_access': self._get_field_access,
             'get_array_address_offset_expr': self._get_array_address_offset_expr,
             'get_bus_width': self._get_bus_width,
@@ -150,13 +149,6 @@ class VerilogExporter:
         Returns the class instance name
         """
         return node.inst_name
-
-
-    def _get_field_name(self, node: FieldNode) -> str:
-        """
-        Returns the class instance name
-        """
-        return f'{node.parent.inst_name}_{node.inst_name}'
 
 
     def _get_field_access(self, field: FieldNode) -> str:
