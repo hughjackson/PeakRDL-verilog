@@ -1,5 +1,4 @@
-[![Build Status](https://travis-ci.org/SystemRDL/PeakRDL-verilog.svg?branch=master)](https://travis-ci.org/SystemRDL/PeakRDL-verilog)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/peakrdl-verilog.svg)](https://pypi.org/project/peakrdl-verilog)
+[![Build Status](https://travis-ci.org/hughjackson/PeakRDL-verilog.svg?branch=main)](https://travis-ci.org/hughjackson/PeakRDL-verilog)
 
 # PeakRDL-verilog
 Generate Verilog register model from compiled SystemRDL input
