@@ -7,8 +7,7 @@ python:
 
 script:
   - python -m pip install .
-  - cd test
-  - ./mintest.py basic test/testcases/basic.rdl
+  - python mintest.py basic test/testcases/basic.rdl
 
 after_success:
   - coveralls
