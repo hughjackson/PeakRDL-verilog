@@ -49,7 +49,7 @@ module {{get_inst_name(top_node)}} (
     input wire [ADDR_WIDTH-1:0]   addr;
     input wire [DATA_WIDTH-1:0]   wdata;
     input wire [DATA_WIDTH/8-1:0] wmask;
-    input wire [DATA_WIDTH-1:0]   rdata;
+    output wire [DATA_WIDTH-1:0]  rdata;
 
     reg [DATA_WIDTH-1:0] mask;
 
