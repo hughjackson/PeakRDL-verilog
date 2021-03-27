@@ -9,6 +9,7 @@ logic                  {{signal(node)}}_decode;
 logic                  {{signal(node)}}_sw_wr;
 logic                  {{signal(node)}}_sw_rd;
 logic [DATA_WIDTH-1:0] {{signal(node)}}_q;
+logic [DATA_WIDTH-1:0] {{signal(node)}}_sw_data;
 
 assign {{signal(node)}}_decode = (addr == ({{offset}}));
 assign {{signal(node)}}_sw_wr = valid && !read && {{signal(node)}}_decode;
@@ -24,7 +25,8 @@ always @ (*) begin
 end
 
 // masked version of sw write data
-logic [DATA_WIDTH-1:0] {{signal(node)}}_sw_data = (wdata & mask) | ({{signal(node)}}_q & ~mask);
+assign {{signal(node)}}_sw_data = (wdata & mask) | ({{signal(node)}}_q & ~mask);
+
 // masked version of return data
 assign {{signal(node)}}_rdata{{index}} = {{signal(node)}}_sw_rd ? {{signal(node)}}_q : 'b0;
 
@@ -48,7 +50,11 @@ always_ff @ (posedge clk, negedge resetn)
     end else
 
     {%- else %}
-always_ff @ (posedge clk)
+//always_ff @ (posedge clk)
+always_ff @ (posedge clk, negedge resetn)
+    if (~resetn) begin
+        {{signal(child)}}_q{{index}} <= '0;
+    end else
 
     {%- endif %}
     begin
