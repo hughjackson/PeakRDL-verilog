@@ -1,4 +1,5 @@
 import os
+import itertools
 
 import jinja2 as jj
 from systemrdl.node import RootNode, Node, RegNode, AddrmapNode, RegfileNode
@@ -50,11 +51,18 @@ class VerilogExporter:
 
         # Define variables used during export
         RegNode.add_derived_property(self.bit_range)
+        RegNode.add_derived_property(self.full_array_dimensions)
+        RegNode.add_derived_property(self.full_array_ranges)
+        RegNode.add_derived_property(self.full_array_indexes)
         RegNode.add_derived_property(self.signal_prefix)
         FieldNode.add_derived_property(self.is_hw_writable)
         FieldNode.add_derived_property(self.is_hw_readable)
         FieldNode.add_derived_property(self.bit_range)
+        FieldNode.add_derived_property(self.full_array_ranges)
+        FieldNode.add_derived_property(self.full_array_dimensions)
         FieldNode.add_derived_property(self.signal_prefix)
+        RegfileNode.add_derived_property(self.full_array_dimensions)
+        RegfileNode.add_derived_property(self.full_array_ranges)
 
         # Top-level node
         self.top = None
@@ -314,7 +322,32 @@ class VerilogExporter:
                         AccessType.r)
 
 
-    def bit_range(self, node, fmt='{msb:2}:{lsb:2}') -> bool:
+    def full_array_dimensions(self, node) -> list:
+        """
+        Get multi-dimensional array indexing for reg/field
+        """
+        if type(node) == AddrmapNode:
+            return []
+        else:
+            return self.full_array_dimensions(node.parent) + (node.array_dimensions or [])
+
+
+    def full_array_indexes(self, node) -> list:
+        """
+        Get multi-dimensional array indexing for reg/field
+        """
+        indexes = itertools.product(*[list(range(k)) for k in node.full_array_dimensions])
+        return [''.join(f'[{k}]' for k in index) for index in indexes]
+
+
+    def full_array_ranges(self, node, fmt='{:>20s}') -> str:
+        """
+        Get multi-dimensional array indexing for reg/field as SV ranges
+        """
+        return fmt.format(''.join(f'[{dim-1}:0]' for dim in node.full_array_dimensions))
+
+
+    def bit_range(self, node, fmt='{msb:2}:{lsb:2}') -> str:
         """
         Formatted bit range for field
         """
