@@ -26,17 +26,6 @@ assign {{signal(node)}}_rdata = {{signal(node)}}_sw_rd ? {{signal(node)}}_q : 'b
 // Field: {{child.get_rel_path(node)}} 
 reg        [{{child.bit_range}}] {{signal(child)}}_q;
 
-{%- if child.is_hw_writable %}
-input wire         {{signal(child)}}_wr;
-input wire [{{child.bit_range}}] {{signal(child)}}_wdata;
-
-{%- endif -%}
-
-{%- if child.get_property('counter') %}
-input wire         {{signal(child)}}_incr;
-
-{%- endif -%}
-
 {%- if not child.implements_storage %}
     {%- if child.is_hw_writable %}
 assign {{signal(child)}}_q = {{signal(child)}}_wdata;
