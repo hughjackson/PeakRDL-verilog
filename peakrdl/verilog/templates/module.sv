@@ -18,7 +18,7 @@ module {{get_inst_name(top_node)}} #(
 
 {%- elif isinstance(node, FieldNode) -%}
 {%- if node.is_hw_writable %}
-    input  logic {{node.parent.full_array_ranges}}        {{signal(node)}}_wr;
+    input  logic {{node.parent.full_array_ranges}}        {{signal(node)}}_wr,
     input  logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node)}}_wdata,
 
 {%- endif -%}
@@ -40,7 +40,16 @@ module {{get_inst_name(top_node)}} #(
     input  logic            [DATA_WIDTH-1:0] wdata,    // write data
     input  logic          [DATA_WIDTH/8-1:0] wmask,    // write mask
     output logic            [DATA_WIDTH-1:0] rdata     // read data
-)
+);
+
+    // <field>_q for non hw-writeable fields
+{%- for node in top_node.descendants() -%}
+{%- if isinstance(node, FieldNode) -%}
+{%- if not node.is_hw_readable %}
+    logic       {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node)}}_q;
+{%- endif -%}
+{%- endif -%}
+{%- endfor %}
 
     // ============================================================
     // SW Access logic

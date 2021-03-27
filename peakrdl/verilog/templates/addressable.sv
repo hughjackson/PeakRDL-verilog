@@ -9,7 +9,6 @@
 {%- set index = index + "[%2s]"%IDX %}
 
 genvar {{IDX}};
-generate
 for ({{IDX}} = 0;
      {{IDX}} < {{node.array_dimensions[0]}};
      {{IDX}} = {{IDX}} + 1) begin
@@ -29,6 +28,5 @@ initial $error("{{type(node).__name__}} unsupported");
 {%- endif -%}
 {%- if node.is_array %}
 end
-endgenerate
 {%- endif -%}
 {%- endmacro %}
