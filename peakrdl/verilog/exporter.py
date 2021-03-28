@@ -337,14 +337,14 @@ class VerilogExporter:
         Get multi-dimensional array indexing for reg/field
         """
         indexes = itertools.product(*[list(range(k)) for k in node.full_array_dimensions])
-        return [''.join(f'[{k}]' for k in index) for index in indexes]
+        return [''.join('[{}]'.format(k) for k in index) for index in indexes]
 
 
     def full_array_ranges(self, node, fmt='{:>20s}') -> str:
         """
         Get multi-dimensional array indexing for reg/field as SV ranges
         """
-        return fmt.format(''.join(f'[{dim-1}:0]' for dim in node.full_array_dimensions))
+        return fmt.format(''.join('[{}:0]'.format(dim-1) for dim in node.full_array_dimensions))
 
 
     def bit_range(self, node, fmt='{msb:2}:{lsb:2}') -> str:
