@@ -27,7 +27,7 @@ module {{get_inst_name(top_node)}} #(
 
 {%- endif -%}
 {%- if node.get_property('counter') %}
-    input  logic {{node.full_array_ranges}}[{{node.bit_range}}] {{signal(node)}}_incr,
+    input  logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node)}}_incr,
 
 {%- endif -%}
 {%- endif -%}
