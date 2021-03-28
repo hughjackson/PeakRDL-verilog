@@ -19,7 +19,7 @@ rdlc = RDLCompiler()
 rdlc.compile_file(rdl_file)
 root = rdlc.elaborate().top
 
-verilog_exportname = os.path.join(output_dir, testcase_name + "_verilog.sv")
+verilog_exportname = os.path.join(output_dir, testcase_name + ".sv")
 
 VerilogExporter().export(
     root, verilog_exportname,
