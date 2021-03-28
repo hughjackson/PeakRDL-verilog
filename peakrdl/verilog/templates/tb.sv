@@ -87,7 +87,7 @@ module {{get_inst_name(top_node)}}_tb #(
         $display("%t: Testcase ({{signal(node)}} {{full_idx(node.parent)}}):", $time());
     {%- if node.is_hw_writable %}
         // HW write - SW read
-        foreach({{signal(node)}}_wdata{{full_idx(node.parent)}}[IDX]) begin
+        for (int IDX = {{node.lsb}}; IDX <= {{node.msb}}; ++IDX) begin
             $display("%t:\tWrite bit %0d high", $time(), IDX);
             {{signal(node)}}_wr{{full_idx(node.parent)}} <= 1'b1;
             {{signal(node)}}_wdata{{full_idx(node.parent)}}[IDX] <= 1'b1;
@@ -118,7 +118,7 @@ module {{get_inst_name(top_node)}}_tb #(
         end
     {%- endif -%}
     {%- if node.is_hw_readable and node.is_sw_writable %}
-        foreach({{signal(node)}}_q{{full_idx(node.parent)}}[IDX]) begin
+        for (int IDX = {{node.lsb}}; IDX <= {{node.msb}}; ++IDX) begin
 
             $display("%t:\tRead bit %0d high", $time(), IDX);
             valid <= 1'b1;
