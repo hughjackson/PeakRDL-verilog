@@ -37,6 +37,7 @@ jobs:
       
     - name: UnitTests
       script:
+        - python -m pip install .
         - python mintest.py basic test/testcases/basic.rdl
         - docker run -ti -v ${PWD}:/work --user $(id -u):$(id -g) verilator/verilator:latest test/testcases/basic*.sv
 
