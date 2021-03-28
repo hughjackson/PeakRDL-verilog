@@ -28,6 +28,10 @@ except RDLCompileError:
 exporter = VerilogExporter()
 exporter.export(root, "test.sv")
 ```
+
+## Verification
+The tool will generate a tb for your module in the same directory. This will test the HW interface
+
 --------------------------------------------------------------------------------
 
 ## Reference
