@@ -81,16 +81,18 @@ module {{get_inst_name(top_node)}}_tb #(
         @(posedge resetn);
 
 
-{%- for node in top_node.descendants() -%}
+{%- for node in top_node.descendants(unroll=True) -%}
 {%- if isinstance(node, FieldNode) %}
         repeat(5) @(posedge clk);
-        $display("%t: Testcase ({{signal(node)}}):", $time());
-{%- if node.is_hw_writable %}
+        $display("%t: Testcase ({{signal(node)}} {{full_idx(node.parent)}}):", $time());
+    {%- if node.is_hw_writable %}
         // HW write - SW read
-        foreach({{signal(node)}}_wdata[IDX]) begin
-            {{signal(node)}}_wr <= 1'b1;
-            {{signal(node)}}_wdata[IDX] <= 1'b1;
+        foreach({{signal(node)}}_wdata{{full_idx(node.parent)}}[IDX]) begin
+            $display("%t:\tWrite bit %0d high", $time(), IDX);
+            {{signal(node)}}_wr{{full_idx(node.parent)}} <= 1'b1;
+            {{signal(node)}}_wdata{{full_idx(node.parent)}}[IDX] <= 1'b1;
             @(posedge clk);
+            {{signal(node)}}_wr <= '0;
 
             valid <= 1'b1;
             read <= 1'b1;
@@ -100,9 +102,11 @@ module {{get_inst_name(top_node)}}_tb #(
             assert(rdata[{{node.bit_range}}] == (1 << (IDX-{{node.lsb}}))) else
                 $fatal("MISMATCH %x != %x", rdata[{{node.bit_range}}], (1 << (IDX-{{node.lsb}})));
 
-            {{signal(node)}}_wr <= 1'b1;
-            {{signal(node)}}_wdata[IDX] <= 1'b0;
+            $display("%t:\tWrite bit %0d low", $time(), IDX);
+            {{signal(node)}}_wr{{full_idx(node.parent)}} <= 1'b1;
+            {{signal(node)}}_wdata{{full_idx(node.parent)}}[IDX] <= 1'b0;
             @(posedge clk);
+            {{signal(node)}}_wr <= '0;
 
             valid <= 1'b1;
             read <= 1'b1;
@@ -112,31 +116,35 @@ module {{get_inst_name(top_node)}}_tb #(
             assert(rdata[{{node.bit_range}}] == 0) else
                 $fatal("MISMATCH %x != %x", rdata[{{node.bit_range}}], 0);
         end
-{%- endif -%}
-{%- if node.is_hw_readable %}
-        foreach({{signal(node)}}_wdata[IDX]) begin
+    {%- endif -%}
+    {%- if node.is_hw_readable and node.is_sw_writable %}
+        foreach({{signal(node)}}_q{{full_idx(node.parent)}}[IDX]) begin
 
+            $display("%t:\tRead bit %0d high", $time(), IDX);
             valid <= 1'b1;
             read <= 1'b0;
             addr <= {{node.parent.absolute_address}};
             wdata <= (1 << IDX);
             @(posedge clk);
             valid <= 1'b0;
-            assert({{signal(node)}}_q == (1 << (IDX-{{node.lsb}}))) else
-                $fatal("MISMATCH %x != %x", {{signal(node)}}_q, (1 << (IDX-{{node.lsb}})));
+            #1;
+            assert({{signal(node)}}_q{{full_idx(node.parent)}} == (1 << (IDX-{{node.lsb}}))) else
+                $fatal("MISMATCH %x != %x", {{signal(node)}}_q{{full_idx(node.parent)}}, (1 << (IDX-{{node.lsb}})));
 
+            $display("%t:\tRead bit %0d low", $time(), IDX);
             valid <= 1'b1;
             read <= 1'b0;
             addr <= {{node.parent.absolute_address}};
             wdata <= '0;
             @(posedge clk);
             valid <= 1'b0;
-            assert({{signal(node)}}_q == '0) else
-                $fatal("MISMATCH %x != %x", {{signal(node)}}_q, '0);
+            #1;
+            assert({{signal(node)}}_q{{full_idx(node.parent)}} == '0) else
+                $fatal("MISMATCH %x != %x", {{signal(node)}}_q{{full_idx(node.parent)}}, '0);
         end
-{%- endif -%}
-{%- if node.get_property('counter') %}
-{%- endif -%}
+    {%- endif -%}
+    {%- if node.get_property('counter') %}
+    {%- endif -%}
 {%- endif -%}
 {%- endfor %}
 

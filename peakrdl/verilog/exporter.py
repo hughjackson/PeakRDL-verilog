@@ -135,6 +135,7 @@ class VerilogExporter:
             'OnWriteType': OnWriteType,
             'isinstance': isinstance,
             'signal': self._get_signal_prefix,
+            'full_idx': self._full_idx,
             'get_inst_name': self._get_inst_name,
             'get_field_access': self._get_field_access,
             'get_array_address_offset_expr': self._get_array_address_offset_expr,
@@ -149,6 +150,9 @@ class VerilogExporter:
         template = self.jj_env.get_template("module.sv")
         stream = template.stream(context)
         stream.dump(path)
+        template = self.jj_env.get_template("tb.sv")
+        stream = template.stream(context)
+        stream.dump('{}_tb.{}'.format(*path.split('.'))) # TODO: better method needed
         print("All done")
 
 
@@ -265,7 +269,7 @@ class VerilogExporter:
         """
         Returns unique-in-addrmap prefix for signals
         """
-        return node.get_rel_path(node.owning_addrmap,'','_','_','')
+        return node.get_rel_path(node.owning_addrmap,'','_','','')
 
 
     def _get_bus_width(self, node: Node) -> int:
@@ -345,6 +349,24 @@ class VerilogExporter:
         Get multi-dimensional array indexing for reg/field as SV ranges
         """
         return fmt.format(''.join('[{}:0]'.format(dim-1) for dim in node.full_array_dimensions))
+
+
+    def _full_idx(self, node) -> str:
+        """
+        Get multi-dimensional array indexing for node instance
+        """
+        l = self._full_idx_list(node)
+        return ''.join('[{}]'.format(k) for k in l)
+
+
+    def _full_idx_list(self, node) -> list:
+        """
+        Get multi-dimensional array indexing for node instance
+        """
+        if type(node) == AddrmapNode:
+            return []
+        else:
+            return self._full_idx_list(node.parent) + (list(node.current_idx or []))
 
 
     def bit_range(self, node, fmt='{msb:2}:{lsb:2}') -> str:
