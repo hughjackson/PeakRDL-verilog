@@ -1,7 +1,7 @@
 {%- macro body(node, offset='', index='') %}
 // ============================================================
 // Register: {{node.get_rel_path(node.parent).upper()}}
-{%- for child in node.children() %}
+{%- for child in node.fields() %}
 //    [{{child.bit_range}}] {{'%20s'%child.get_rel_path(node)}}: hw={{'%-5s'%child.get_property('hw').name}} sw={{'%-5s'%child.get_property('sw').name}} reset=0x{{'%x'%(child.get_property('reset') or 0)}}
 {%- endfor %}
 // ============================================================
@@ -19,7 +19,7 @@ assign {{signal(node)}}_strb{{index}} = {{signal(node)}}_sw_wr;
 
 always @ (*) begin
     {{signal(node)}}_q[{{node.bit_range}}] <= 'b0;
-{%- for child in node.children() %}
+{%- for child in node.fields() %}
     {{signal(node)}}_q[{{child.bit_range}}] <= {{signal(child)}}_q{{index}};
 {%- endfor %}
 end
@@ -30,7 +30,7 @@ assign {{signal(node)}}_sw_data = (wdata & mask) | ({{signal(node)}}_q & ~mask);
 // masked version of return data
 assign {{signal(node)}}_rdata{{index}} = {{signal(node)}}_sw_rd ? {{signal(node)}}_q : 'b0;
 
-{%- for child in node.children() %}
+{%- for child in node.fields() %}
 
 // Field: {{child.get_rel_path(node)}} 
 
