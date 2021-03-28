@@ -5,6 +5,12 @@ python:
   - 3.7
   - 3.8
 
+services:
+  - docker
+  
+before_install:
+  - docker pull verilator/verilator:latest >/dev/null
+
 script:
   - python -m pip install .
   - python mintest.py basic test/testcases/basic.rdl
@@ -28,6 +34,11 @@ jobs:
         - python -m pip install pylint
         - python -m pip install .
       script: pylint --rcfile test/pylint.rc peakrdl
+      
+    - name: UnitTests
+      script:
+        - python mintest.py basic test/testcases/basic.rdl
+        - docker run -ti -v ${PWD}:/work --user $(id -u):$(id -g) verilator/verilator:latest test/testcases/basic*.sv
 
     # Deploy source distribution
     - stage: deploy
