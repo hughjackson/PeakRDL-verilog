@@ -20,7 +20,7 @@ addrmap basic #(longint unsigned PARAM = 0x10) {
         };
         reg_t r1 @ 0x0;
         reg_t r2 @ 0x4;
-        reg_t r3[2] @ 0x8;
+        reg_t r3/*[2]*/ @ 0x8; // TODO: not yet supported
 
         r3.f1->sw=w;
         r3.f1->reset=PARAM;
@@ -32,7 +32,7 @@ addrmap basic #(longint unsigned PARAM = 0x10) {
             field {sw=rw; hw=r;counter;incrvalue=4;} f[15:0] = 1234;
             hdl_path = "r1";
             hdl_path_gate = "r1_gate";
-        } r1[4] @ 0x0 += 4;
+        } r1 /* TODO: not yet supported: [4] @ 0x0 += 4*/;
         hdl_path = "bar";
         hdl_path_gate = "bar_gate";
     };
