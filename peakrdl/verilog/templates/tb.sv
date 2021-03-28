@@ -27,7 +27,7 @@ module {{get_inst_name(top_node)}}_tb #(
 
 {%- endif -%}
 {%- if node.get_property('counter') %}
-    logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node)}}_incr;
+    logic {{node.parent.full_array_ranges}}        {{signal(node)}}_incr;
 
 {%- endif -%}
 {%- endif -%}

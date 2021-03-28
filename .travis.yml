@@ -29,13 +29,13 @@ stages:
 jobs:
   include:
     # Run lint
-    - name: Lint
+    - name: Python Lint
       install:
         - python -m pip install pylint
         - python -m pip install .
       script: pylint --rcfile test/pylint.rc peakrdl
       
-    - name: UnitTests
+    - name: Verilator Lint
       script:
         - python -m pip install .
         - python mintest.py basic test/testcases/basic.rdl
