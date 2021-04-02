@@ -1,0 +1,24 @@
+
+addrmap counter #(longint unsigned PARAM = 0x10) {
+
+    reg {
+        default sw = rw;
+        default hw = r;
+
+        field counter_f { counter; };
+        counter_f count1[4]; // Define a 4 bit counter from 3 down to 0
+        count1->incrvalue=3; // Increment the counter by 3 when incrementing
+                                // count1 implies an UP counter
+        counter_f count2[3]; // Define a 3 bit counter from 6 down to 4
+        count2->decrwidth=2; // provide 2 bit interface for a user to decide the decr
+                                // value. This implies a down counter.
+        counter_f count3[5]=0; // Defines a 5 bit counter from 11 down to 7
+        count3->incrvalue=2; // Define a an Up/Down Counter
+        count3->decrvalue=4;
+        field {} count4_incr[8] = 8'h0f; // define a field to control the incr
+                                // value of another field.
+        counter_f count4[8]=0;
+        count4->incrvalue = count4_incr; // Counter is incremented by the valu
+    } count[2];
+
+};

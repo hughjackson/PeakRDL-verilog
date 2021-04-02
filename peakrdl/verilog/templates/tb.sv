@@ -52,9 +52,17 @@ module {{get_inst_name(top_node)}}_tb #(
     logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node)}}_q;
 
 {%- endif -%}
-{%- if node.get_property('counter') %}
+{%- if node.is_up_counter %}
     logic {{node.parent.full_array_ranges}}        {{signal(node)}}_incr;
-
+    {%- if node.get_property('incrwidth') %}
+    logic {{node.parent.full_array_ranges}}[{{node.get_property('incrwidth')}}-1:0] {{signal(node)}}_incrvalue;
+    {%- endif -%}
+{%- endif -%}
+{%- if node.is_down_counter %}
+    logic {{node.parent.full_array_ranges}}        {{signal(node)}}_decr;
+    {%- if node.get_property('decrwidth') %}
+    logic {{node.parent.full_array_ranges}}[{{node.get_property('decrwidth')}}-1:0] {{signal(node)}}_decrvalue;
+    {%- endif -%}
 {%- endif -%}
 {%- endif -%}
 {%- endfor %}
@@ -91,8 +99,17 @@ module {{get_inst_name(top_node)}}_tb #(
         {{signal(node)}}_wr <= '0;
         {{signal(node)}}_wdata <= '0;
 {%- endif -%}
-{%- if node.get_property('counter') %}
-        {{signal(node)}}_incr <= '0;
+{%- if node.is_up_counter %}
+    {{signal(node)}}_incr <= '0;
+    {%- if node.get_property('incrwidth') %}
+    {{signal(node)}}_incrvalue <= '0;
+    {%- endif -%}
+{%- endif -%}
+{%- if node.is_down_counter %}
+    {{signal(node)}}_decr <= '0;
+    {%- if node.get_property('decrwidth') %}
+    {{signal(node)}}_decrvalue <= '0;
+    {%- endif -%}
 {%- endif -%}
 {%- endif -%}
 {%- endfor %}
