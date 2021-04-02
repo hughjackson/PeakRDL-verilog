@@ -17,7 +17,7 @@ assign {{signal(node)}}_sw_rd = valid &&  read && {{signal(node)}}_decode;
 assign {{signal(node)}}_strb{{index}} = {{signal(node)}}_sw_wr;
 
 always_comb begin
-    {{signal(node)}}_q[{{node.bit_range}}] = '0;
+    {{signal(node)}}_q = '0;
 {%- for child in node.fields() %}
     {{signal(node)}}_q[{{child.bit_range}}] = {{signal(child)}}_q{{index}};
 {%- endfor %}
@@ -63,17 +63,26 @@ always_ff @ (posedge clk, negedge resetn)
 
         {%- if child.is_up_counter %}
         // Counter increment
-        if ({{signal(child)}}_incr{{index}}) begin
-            {{signal(child)}}_q{{index}} <= {{signal(child)}}_q{{index}} + {{get_counter_value(child, index, 'incr')}};
+        {{signal(child)}}_overflow{{index}} <= 1'b0;
+        if ({{get_counter_enable(child, index, 'incr')}}) begin
+            /* verilator lint_off WIDTH */
+            { {{signal(child)}}_overflow{{index}},
+             {{signal(child)}}_q{{index}} } <= {{signal(child)}}_q{{index}} + {{get_counter_value(child, index, 'incr')}};
+            /* verilator lint_on WIDTH */
         end
         {%- endif %}
         {%- if child.is_down_counter %}
         // Counter decrement
-        if ({{signal(child)}}_decr{{index}}) begin
-            {{signal(child)}}_q{{index}} <= {{signal(child)}}_q{{index}} - {{get_counter_value(child, index, 'decr')}};
+        {{signal(child)}}_underflow{{index}} <= 1'b0;
+        if ({{get_counter_enable(child, index, 'decr')}}) begin
+            /* verilator lint_off WIDTH */
+            { {{signal(child)}}_underflow{{index}},
+              {{signal(child)}}_q{{index}} } <= {{signal(child)}}_q{{index}} - {{get_counter_value(child, index, 'decr')}};
+            /* verilator lint_on WIDTH */
         end
         {%- endif %}
     end
+
 
 {%- endif %}
 

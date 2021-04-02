@@ -11,6 +11,7 @@ addrmap counter #(longint unsigned PARAM = 0x10) {
         default sw = rw;
         default hw = r;
 
+        // 9.8.1 Example 1
         field counter_f { counter; };
         counter_f count1[4]; // Define a 4 bit counter from 3 down to 0
         count1->incrvalue=3; // Increment the counter by 3 when incrementing
@@ -27,4 +28,22 @@ addrmap counter #(longint unsigned PARAM = 0x10) {
         count4->incrvalue = count4_incr; // Counter is incremented by the valu
     } count[2];
 
+    // 9.8.1 Example 2
+    field some_counter {
+        counter;
+        we;
+    }; // End of Reg: some_counter
+
+    reg some_counter_reg {
+        regwidth=16;
+        some_counter count[16]=0; // Create 16 bit counter POR to 0
+    }; // End of Reg:
+
+    // Example 32 bit up counter
+    some_counter_reg count1_low;
+    some_counter_reg count1_high;
+
+    count1_high.count->incr = count1_low.count->overflow;
+    // Daisy chain the counters together to create a 32 bit counter from the 2
+    // 16 bit countersV
 };
