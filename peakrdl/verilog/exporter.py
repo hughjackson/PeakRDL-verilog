@@ -113,15 +113,14 @@ class VerilogExporter:
         # go through top level regfiles
         modules = []
         for desc in node.descendants():
-            if ((isinstance(desc, RegfileNode) or
-                 isinstance(desc, RegNode)) and
+            if ((isinstance(desc, (RegfileNode, RegNode))) and
                 isinstance(desc.parent, AddrmapNode)):
                 if desc.parent not in modules:
-                    modules.append(desc.parent);
+                    modules.append(desc.parent)
 
-        for node in modules:
-            print("Generating reg_block for {}".format(self._get_inst_name(node)))
-            self.top = node
+        for block in modules:
+            print("Generating reg_block for {}".format(self._get_inst_name(block)))
+            self.top = block
 
 
             # First, traverse the model and collect some information
@@ -131,7 +130,7 @@ class VerilogExporter:
             context = {
                 'print': print,
                 'type': type,
-                'top_node': node,
+                'top_node': block,
                 'FieldNode': FieldNode,
                 'RegNode': RegNode,
                 'RegfileNode': RegfileNode,
@@ -315,11 +314,14 @@ class VerilogExporter:
 
         hw_value = "{}_{}value{}".format(self._get_signal_prefix(node), prop, index)
 
-        if width:               return hw_value
-        if not val:             return 1; # default vlaue
-        if type(val) == int:    return val
-
-        if (val.parent != node.parent): print("ERROR: incrvalue reference only supported for fields in same reg")
+        if width:
+            return hw_value
+        if not val:
+            return 1 # default vlaue
+        if type(val) == int:
+            return val
+        if val.parent != node.parent:
+            print("ERROR: incrvalue reference only supported for fields in same reg")
 
         sw_value = "{}_q{}"      .format(self._get_signal_prefix(val), index)
         return sw_value
