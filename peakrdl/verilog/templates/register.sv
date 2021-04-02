@@ -17,7 +17,7 @@ assign {{signal(node)}}_sw_rd = valid &&  read && {{signal(node)}}_decode;
 assign {{signal(node)}}_strb{{index}} = {{signal(node)}}_sw_wr;
 
 always_comb begin
-    {{signal(node)}}_q[{{node.bit_range}}] = '0;
+    {{signal(node)}}_q = '0;
 {%- for child in node.fields() %}
     {{signal(node)}}_q[{{child.bit_range}}] = {{signal(child)}}_q{{index}};
 {%- endfor %}

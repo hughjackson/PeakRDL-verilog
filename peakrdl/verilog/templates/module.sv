@@ -56,6 +56,7 @@ module {{get_inst_name(top_node)}} #(
 {%- if not node.is_hw_readable %}
     logic       {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node)}}_q;
 {%- endif -%}
+/* verilator lint_off UNSUED */
 {%- if node.is_up_counter %}
     logic {{node.parent.full_array_ranges}}        {{signal(node)}}_overflow;
 {%- endif -%}
@@ -64,6 +65,7 @@ module {{get_inst_name(top_node)}} #(
 {%- endif -%}
 {%- endif -%}
 {%- endfor %}
+/* verilator lint_on UNSUED */
 
     // ============================================================
     // SW Access logic
