@@ -109,50 +109,54 @@ class VerilogExporter:
 
 
         # go through top level regfiles
-        #modules = []
-        #for desc in node.descendants():
-        #    if (isinstance(desc, RegfileNode) and
-        #        isinstance(desc.parent, AddrmapNode)):
-        #        print(self._get_inst_name(desc))
-        #        modules.append(desc);
-        #node = modules[0]
-        self.top = node
+        modules = []
+        for desc in node.descendants():
+            if ((isinstance(desc, RegfileNode) or
+                 isinstance(desc, RegNode)) and
+                isinstance(desc.parent, AddrmapNode)):
+                if desc.parent not in modules:
+                    modules.append(desc.parent);
 
-        # First, traverse the model and collect some information
-        #self.bus_width_db = {}
-        #RDLWalker().walk(self.top)
+        for node in modules:
+            print("Generating reg_block for {}".format(self._get_inst_name(node)))
+            self.top = node
 
-        context = {
-            'print': print,
-            'type': type,
-            'top_node': node,
-            'FieldNode': FieldNode,
-            'RegNode': RegNode,
-            'RegfileNode': RegfileNode,
-            'AddrmapNode': AddrmapNode,
-            'MemNode': MemNode,
-            'AddressableNode': AddressableNode,
-            'OnWriteType': OnWriteType,
-            'isinstance': isinstance,
-            'signal': self._get_signal_prefix,
-            'full_idx': self._full_idx,
-            'get_inst_name': self._get_inst_name,
-            'get_field_access': self._get_field_access,
-            'get_array_address_offset_expr': self._get_array_address_offset_expr,
-            'get_bus_width': self._get_bus_width,
-            'get_mem_access': self._get_mem_access,
-            'roundup_to': self._roundup_to,
-            'roundup_pow2': self._roundup_pow2,
-        }
 
-        context.update(self.user_template_context)
+            # First, traverse the model and collect some information
+            #self.bus_width_db = {}
+            #RDLWalker().walk(self.top)
 
-        template = self.jj_env.get_template("module.sv")
-        stream = template.stream(context)
-        stream.dump(path)
-        template = self.jj_env.get_template("tb.sv")
-        stream = template.stream(context)
-        stream.dump('{}_tb.{}'.format(*path.split('.'))) # TODO: better method needed
+            context = {
+                'print': print,
+                'type': type,
+                'top_node': node,
+                'FieldNode': FieldNode,
+                'RegNode': RegNode,
+                'RegfileNode': RegfileNode,
+                'AddrmapNode': AddrmapNode,
+                'MemNode': MemNode,
+                'AddressableNode': AddressableNode,
+                'OnWriteType': OnWriteType,
+                'isinstance': isinstance,
+                'signal': self._get_signal_prefix,
+                'full_idx': self._full_idx,
+                'get_inst_name': self._get_inst_name,
+                'get_field_access': self._get_field_access,
+                'get_array_address_offset_expr': self._get_array_address_offset_expr,
+                'get_bus_width': self._get_bus_width,
+                'get_mem_access': self._get_mem_access,
+                'roundup_to': self._roundup_to,
+                'roundup_pow2': self._roundup_pow2,
+            }
+
+            context.update(self.user_template_context)
+
+            template = self.jj_env.get_template("module.sv")
+            stream = template.stream(context)
+            stream.dump(path)
+            template = self.jj_env.get_template("tb.sv")
+            stream = template.stream(context)
+            stream.dump('{}_tb.{}'.format(*path.split('.'))) # TODO: better method needed
         print("All done")
 
 
