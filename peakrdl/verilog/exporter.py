@@ -57,6 +57,8 @@ class VerilogExporter:
         RegNode.add_derived_property(self.signal_prefix)
         FieldNode.add_derived_property(self.is_hw_writable)
         FieldNode.add_derived_property(self.is_hw_readable)
+        FieldNode.add_derived_property(self.is_up_counter)
+        FieldNode.add_derived_property(self.is_down_counter)
         FieldNode.add_derived_property(self.bit_range)
         FieldNode.add_derived_property(self.full_array_ranges)
         FieldNode.add_derived_property(self.full_array_dimensions)
@@ -109,50 +111,54 @@ class VerilogExporter:
 
 
         # go through top level regfiles
-        #modules = []
-        #for desc in node.descendants():
-        #    if (isinstance(desc, RegfileNode) and
-        #        isinstance(desc.parent, AddrmapNode)):
-        #        print(self._get_inst_name(desc))
-        #        modules.append(desc);
-        #node = modules[0]
-        self.top = node
+        modules = []
+        for desc in node.descendants():
+            if ((isinstance(desc, (RegfileNode, RegNode))) and
+                isinstance(desc.parent, AddrmapNode)):
+                if desc.parent not in modules:
+                    modules.append(desc.parent)
 
-        # First, traverse the model and collect some information
-        #self.bus_width_db = {}
-        #RDLWalker().walk(self.top)
+        for block in modules:
+            print("Generating reg_block for {}".format(self._get_inst_name(block)))
+            self.top = block
 
-        context = {
-            'print': print,
-            'type': type,
-            'top_node': node,
-            'FieldNode': FieldNode,
-            'RegNode': RegNode,
-            'RegfileNode': RegfileNode,
-            'AddrmapNode': AddrmapNode,
-            'MemNode': MemNode,
-            'AddressableNode': AddressableNode,
-            'OnWriteType': OnWriteType,
-            'isinstance': isinstance,
-            'signal': self._get_signal_prefix,
-            'full_idx': self._full_idx,
-            'get_inst_name': self._get_inst_name,
-            'get_field_access': self._get_field_access,
-            'get_array_address_offset_expr': self._get_array_address_offset_expr,
-            'get_bus_width': self._get_bus_width,
-            'get_mem_access': self._get_mem_access,
-            'roundup_to': self._roundup_to,
-            'roundup_pow2': self._roundup_pow2,
-        }
 
-        context.update(self.user_template_context)
+            # First, traverse the model and collect some information
+            #self.bus_width_db = {}
+            #RDLWalker().walk(self.top)
 
-        template = self.jj_env.get_template("module.sv")
-        stream = template.stream(context)
-        stream.dump(path)
-        template = self.jj_env.get_template("tb.sv")
-        stream = template.stream(context)
-        stream.dump('{}_tb.{}'.format(*path.split('.'))) # TODO: better method needed
+            context = {
+                'print': print,
+                'type': type,
+                'top_node': block,
+                'FieldNode': FieldNode,
+                'RegNode': RegNode,
+                'RegfileNode': RegfileNode,
+                'AddrmapNode': AddrmapNode,
+                'MemNode': MemNode,
+                'AddressableNode': AddressableNode,
+                'OnWriteType': OnWriteType,
+                'isinstance': isinstance,
+                'signal': self._get_signal_prefix,
+                'full_idx': self._full_idx,
+                'get_inst_name': self._get_inst_name,
+                'get_field_access': self._get_field_access,
+                'get_array_address_offset_expr': self._get_array_address_offset_expr,
+                'get_bus_width': self._get_bus_width,
+                'get_mem_access': self._get_mem_access,
+                'roundup_to': self._roundup_to,
+                'roundup_pow2': self._roundup_pow2,
+                'get_counter_value': self._get_counter_value,
+            }
+
+            context.update(self.user_template_context)
+
+            template = self.jj_env.get_template("module.sv")
+            stream = template.stream(context)
+            stream.dump(path)
+            template = self.jj_env.get_template("tb.sv")
+            stream = template.stream(context)
+            stream.dump('{}_tb.{}'.format(*path.split('.'))) # TODO: better method needed
         print("All done")
 
 
@@ -299,11 +305,53 @@ class VerilogExporter:
         return 1<<(x-1).bit_length()
 
 
+    def _get_counter_value(self, node, index, prop) -> str:
+        """
+        Returns the value or SV variable name for reference
+        """
+        val = node.get_property(prop+'value')
+        width = node.get_property(prop+'width')
+
+        hw_value = "{}_{}value{}".format(self._get_signal_prefix(node), prop, index)
+
+        if width:
+            return hw_value
+        if not val:
+            return 1 # default vlaue
+        if type(val) == int:
+            return val
+        if val.parent != node.parent:
+            print("ERROR: incrvalue reference only supported for fields in same reg")
+
+        sw_value = "{}_q{}"      .format(self._get_signal_prefix(val), index)
+        return sw_value
+
     def signal_prefix(self, node: Node) -> str:
         """
         Returns unique-in-addrmap prefix for signals
         """
         return node.get_rel_path(node.owning_addrmap,'','_','_','')
+
+
+    def is_up_counter(self, node) -> bool:
+        """
+        Field is an up counter
+        """
+        return (node.get_property('counter') and
+                ( node.get_property('incrvalue') or
+                  node.get_property('incrwidth') or
+                  node.get_property('incr') or
+                  not node.is_down_counter ) )
+
+
+    def is_down_counter(self, node) -> bool:
+        """
+        Field is an up counter
+        """
+        return (node.get_property('counter') and
+                ( node.get_property('decrvalue') or
+                  node.get_property('decrwidth') or
+                  node.get_property('decr') ) )
 
 
     def is_hw_writable(self, node) -> bool:
@@ -366,6 +414,8 @@ class VerilogExporter:
         if type(node) == AddrmapNode:
             return []
         else:
+            if node.is_array and not node.current_idx:
+                print (node.get_path_segment(), node.current_idx)
             return self._full_idx_list(node.parent) + (list(node.current_idx or []))
 
 

@@ -61,10 +61,16 @@ always_ff @ (posedge clk, negedge resetn)
         end
         {%- endif -%}
 
-        {%- if child.get_property('counter') %}
-        // Counter updates
+        {%- if child.is_up_counter %}
+        // Counter increment
         if ({{signal(child)}}_incr{{index}}) begin
-            {{signal(child)}}_q{{index}} <= {{signal(child)}}_q{{index}} + {{child.get_property('incrvalue')}};
+            {{signal(child)}}_q{{index}} <= {{signal(child)}}_q{{index}} + {{get_counter_value(child, index, 'incr')}};
+        end
+        {%- endif %}
+        {%- if child.is_down_counter %}
+        // Counter decrement
+        if ({{signal(child)}}_decr{{index}}) begin
+            {{signal(child)}}_q{{index}} <= {{signal(child)}}_q{{index}} - {{get_counter_value(child, index, 'decr')}};
         end
         {%- endif %}
     end
