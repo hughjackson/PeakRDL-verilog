@@ -65,16 +65,20 @@ always_ff @ (posedge clk, negedge resetn)
         // Counter increment
         {{signal(child)}}_overflow{{index}} <= 1'b0;
         if ({{get_counter_enable(child, index, 'incr')}}) begin
+            /* verilator lint_off WIDTH */
             { {{signal(child)}}_overflow{{index}},
              {{signal(child)}}_q{{index}} } <= {{signal(child)}}_q{{index}} + {{get_counter_value(child, index, 'incr')}};
+            /* verilator lint_on WIDTH */
         end
         {%- endif %}
         {%- if child.is_down_counter %}
         // Counter decrement
         {{signal(child)}}_underflow{{index}} <= 1'b0;
         if ({{get_counter_enable(child, index, 'decr')}}) begin
+            /* verilator lint_off WIDTH */
             { {{signal(child)}}_underflow{{index}},
               {{signal(child)}}_q{{index}} } <= {{signal(child)}}_q{{index}} - {{get_counter_value(child, index, 'decr')}};
+            /* verilator lint_on WIDTH */
         end
         {%- endif %}
     end
