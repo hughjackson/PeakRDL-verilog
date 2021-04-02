@@ -52,8 +52,8 @@ module {{get_inst_name(top_node)}} #(
     output logic            [DATA_WIDTH-1:0] rdata     // read data
 );
 
-    // local signals for fields
 /* verilator lint_off UNUSED */
+    // local signals for fields
 {%- for node in top_node.descendants() -%}
 {%- if isinstance(node, FieldNode) -%}
 {%- if not node.is_hw_readable %}
@@ -74,12 +74,15 @@ module {{get_inst_name(top_node)}} #(
     // ============================================================
 
     logic [DATA_WIDTH-1:0] mask;
+    logic [DATA_WIDTH-1:0] masked_data;
 
-    always @ (wmask) begin
+    always_comb begin
         int byte_idx;
         for (byte_idx = 0; byte_idx < DATA_WIDTH/8; byte_idx+=1)
           mask[8*(byte_idx+1)-1 -: 8] = {8{wmask[byte_idx]}};
     end
+
+    assign masked_data = wdata & mask;
 
 {%- for node in top_node.descendants() -%}
 {%- if isinstance(node, RegNode) %}

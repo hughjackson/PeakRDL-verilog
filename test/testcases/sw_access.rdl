@@ -1,0 +1,21 @@
+
+addrmap sw_access {
+
+    reg {
+        default sw = rw;
+        default hw = rw;
+        default fieldwidth = 2;
+        field {onread =rclr;  } frclr;
+        field {onread =rset;  } frset;
+        field {onwrite=woset; } fwoset;
+        field {onwrite=woclr; } fwoclr;
+        field {onwrite=wot;   } fwot;
+        field {onwrite=wzs;   } fwzs;
+        field {onwrite=wzc;   } fwzc;
+        field {onwrite=wzt;   } fwzt;
+        field {onwrite=wclr;  } fwclr;
+        field {onwrite=wset;  } fwset;
+        field {singlepulse; fieldwidth=1;} single=0;
+    } onreadwrite;
+
+};

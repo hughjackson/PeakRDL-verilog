@@ -210,11 +210,45 @@ module {{get_inst_name(top_node)}}_tb #(
         $display("%t:\tSoftware write (hardware read) test", $time());
         for (int IDX = {{node.lsb}}; IDX <= {{node.msb}}; ++IDX) begin
 
+            temp = '0;
+            temp[{{node.bit_range}}] = {{signal(node)}}_q{{full_idx(node.parent)}};
+        {%- if node.get_property('onwrite') == OnWriteType.woset %}
+            temp[IDX] = 1;
+            value = temp;
+        {%- elif node.get_property('onwrite') == OnWriteType.woclr %}
+            temp[IDX] = 0;
+            value = temp;
+        {%- elif node.get_property('onwrite') == OnWriteType.wot %}
+            temp[IDX] = !temp[IDX];
+            value = temp;
+        {%- elif node.get_property('onwrite') == OnWriteType.wzs %}
+            temp = '1;
+            temp[IDX] = {{signal(node)}}_q{{full_idx(node.parent)}}[IDX];
+            value = '1;
+        {%- elif node.get_property('onwrite') == OnWriteType.wzc %}
+            temp = '0;
+            temp[IDX] = {{signal(node)}}_q{{full_idx(node.parent)}}[IDX];
+            value = '0;
+        {%- elif node.get_property('onwrite') == OnWriteType.wzt %}
+            temp = ~temp;
+            temp[IDX] = {{signal(node)}}_q{{full_idx(node.parent)}}[IDX];
+            value = ~temp;
+        {%- elif node.get_property('onwrite') == OnWriteType.wclr %}
+            temp = '0;
+            value = '0;
+        {%- elif node.get_property('onwrite') == OnWriteType.wset %}
+            temp = '1;
+            value = '1;
+        {%- else %}
+            temp = (1 << IDX);
+            value = '0;
+        {%- endif %}
+
             `SW_WRITE( {{node.parent.absolute_address}}, (1 << IDX) )
-            #1 `CHECK_EQUAL({{signal(node)}}_q{{full_idx(node.parent)}}, (1 << (IDX-{{node.lsb}})))
+            #1 `CHECK_EQUAL({{signal(node)}}_q{{full_idx(node.parent)}}, temp[{{node.bit_range}}])
 
             `SW_WRITE( {{node.parent.absolute_address}}, 0 )
-            #1 `CHECK_EQUAL({{signal(node)}}_q{{full_idx(node.parent)}}, 0)
+            #1 `CHECK_EQUAL({{signal(node)}}_q{{full_idx(node.parent)}}, value[{{node.bit_range}}])
 
         end
     {%- endif -%}
@@ -222,13 +256,47 @@ module {{get_inst_name(top_node)}}_tb #(
         $display("%t:\tSoftware write (software read) test", $time());
         for (int IDX = {{node.lsb}}; IDX <= {{node.msb}}; ++IDX) begin
 
+            temp = '0;
+            temp[{{node.bit_range}}] = {{signal(node)}}_q{{full_idx(node.parent)}};
+        {%- if node.get_property('onwrite') == OnWriteType.woset %}
+            temp[IDX] = 1;
+            value = temp;
+        {%- elif node.get_property('onwrite') == OnWriteType.woclr %}
+            temp[IDX] = 0;
+            value = temp;
+        {%- elif node.get_property('onwrite') == OnWriteType.wot %}
+            temp[IDX] = !temp[IDX];
+            value = temp;
+        {%- elif node.get_property('onwrite') == OnWriteType.wzs %}
+            temp = '1;
+            temp[IDX] = {{signal(node)}}_q{{full_idx(node.parent)}}[IDX];
+            value = '1;
+        {%- elif node.get_property('onwrite') == OnWriteType.wzc %}
+            temp = '0;
+            temp[IDX] = {{signal(node)}}_q{{full_idx(node.parent)}}[IDX];
+            value = '0;
+        {%- elif node.get_property('onwrite') == OnWriteType.wzt %}
+            temp = ~temp;
+            temp[IDX] = {{signal(node)}}_q{{full_idx(node.parent)}}[IDX];
+            value = ~temp;
+        {%- elif node.get_property('onwrite') == OnWriteType.wclr %}
+            temp = '0;
+            value = '0;
+        {%- elif node.get_property('onwrite') == OnWriteType.wset %}
+            temp = '1;
+            value = '1;
+        {%- else %}
+            temp = (1 << IDX);
+            value = '0;
+        {%- endif %}
+
             `SW_WRITE( {{node.parent.absolute_address}}, (1 << IDX) )
             `SW_READ( {{node.parent.absolute_address}} )
-            `CHECK_EQUAL(rdata[{{node.bit_range}}], (1 << (IDX-{{node.lsb}})))
+            `CHECK_EQUAL(rdata[{{node.bit_range}}], temp[{{node.bit_range}}])
 
             `SW_WRITE( {{node.parent.absolute_address}}, 0 )
             `SW_READ( {{node.parent.absolute_address}} )
-            `CHECK_EQUAL(rdata[{{node.bit_range}}], 0)
+            `CHECK_EQUAL(rdata[{{node.bit_range}}], value[{{node.bit_range}}])
 
         end
     {%- endif -%}

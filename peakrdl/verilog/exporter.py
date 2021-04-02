@@ -138,6 +138,7 @@ class VerilogExporter:
                 'MemNode': MemNode,
                 'AddressableNode': AddressableNode,
                 'OnWriteType': OnWriteType,
+                'OnReadType': OnReadType,
                 'isinstance': isinstance,
                 'signal': self._get_signal_prefix,
                 'full_idx': self._full_idx,
