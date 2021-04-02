@@ -96,7 +96,7 @@ module {{get_inst_name(top_node)}}_tb #(
         forever #5 clk <= ~clk;
     end
 
-    {{get_inst_name(top_node)}} #(
+    {{get_inst_name(top_node)}}_rf #(
         .ADDR_OFFSET(ADDR_OFFSET),
         .ADDR_WIDTH (ADDR_WIDTH),
         .DATA_WIDTH (DATA_WIDTH)
