@@ -26,13 +26,13 @@ module {{get_inst_name(top_node)}} #(
     output logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node)}}_q,
 
 {%- endif -%}
-{%- if node.is_up_counter %}
+{%- if node.is_up_counter and not node.get_property('incr') %}
     input  logic {{node.parent.full_array_ranges}}        {{signal(node)}}_incr,
     {%- if node.get_property('incrwidth') %}
     input  logic {{node.parent.full_array_ranges}}[{{node.get_property('incrwidth')}}-1:0] {{signal(node)}}_incrvalue,
     {%- endif -%}
 {%- endif -%}
-{%- if node.is_down_counter %}
+{%- if node.is_down_counter and not node.get_property('decr') %}
     input  logic {{node.parent.full_array_ranges}}        {{signal(node)}}_decr,
     {%- if node.get_property('decrwidth') %}
     input  logic {{node.parent.full_array_ranges}}[{{node.get_property('decrwidth')}}-1:0] {{signal(node)}}_decrvalue,
@@ -50,11 +50,17 @@ module {{get_inst_name(top_node)}} #(
     output logic            [DATA_WIDTH-1:0] rdata     // read data
 );
 
-    // <field>_q for non hw-writeable fields
+    // local signals for fields
 {%- for node in top_node.descendants() -%}
 {%- if isinstance(node, FieldNode) -%}
 {%- if not node.is_hw_readable %}
     logic       {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node)}}_q;
+{%- endif -%}
+{%- if node.is_up_counter %}
+    logic {{node.parent.full_array_ranges}}        {{signal(node)}}_overflow;
+{%- endif -%}
+{%- if node.is_down_counter %}
+    logic {{node.parent.full_array_ranges}}        {{signal(node)}}_underflow;
 {%- endif -%}
 {%- endif -%}
 {%- endfor %}

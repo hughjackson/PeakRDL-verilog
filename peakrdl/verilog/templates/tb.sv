@@ -156,7 +156,7 @@ module {{get_inst_name(top_node)}}_tb #(
 
         end
     {%- endif -%}
-    {%- if node.is_up_counter %}
+    {%- if node.is_up_counter and not node.get_property('incr') %}
         $display("%t:\tHardware increment test", $time());
         for (int IDX = 0; IDX <= 4; ++IDX) begin
 

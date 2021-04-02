@@ -149,6 +149,7 @@ class VerilogExporter:
                 'roundup_to': self._roundup_to,
                 'roundup_pow2': self._roundup_pow2,
                 'get_counter_value': self._get_counter_value,
+                'get_counter_enable': self._get_counter_enable,
             }
 
             context.update(self.user_template_context)
@@ -305,6 +306,23 @@ class VerilogExporter:
         return 1<<(x-1).bit_length()
 
 
+    def _get_counter_enable(self, node, index, prop) -> str:
+        """
+        Returns the value or SV variable name for reference
+        """
+        enable = node.get_property(prop)
+
+        hw_enable = "{}_{}{}".format(self._get_signal_prefix(node), prop, index)
+
+        if not enable:
+            return hw_enable
+        ref = enable.node
+        ref_prop = type(enable).__name__.split('_')[1]
+
+        sw_value = "{}_{}{}"      .format(self._get_signal_prefix(ref), ref_prop, index)
+        return sw_value
+
+
     def _get_counter_value(self, node, index, prop) -> str:
         """
         Returns the value or SV variable name for reference
@@ -325,6 +343,7 @@ class VerilogExporter:
 
         sw_value = "{}_q{}"      .format(self._get_signal_prefix(val), index)
         return sw_value
+
 
     def signal_prefix(self, node: Node) -> str:
         """

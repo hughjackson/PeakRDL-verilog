@@ -63,17 +63,22 @@ always_ff @ (posedge clk, negedge resetn)
 
         {%- if child.is_up_counter %}
         // Counter increment
-        if ({{signal(child)}}_incr{{index}}) begin
-            {{signal(child)}}_q{{index}} <= {{signal(child)}}_q{{index}} + {{get_counter_value(child, index, 'incr')}};
+        {{signal(child)}}_overflow{{index}} <= 1'b0;
+        if ({{get_counter_enable(child, index, 'incr')}}) begin
+            { {{signal(child)}}_overflow{{index}},
+             {{signal(child)}}_q{{index}} } <= {{signal(child)}}_q{{index}} + {{get_counter_value(child, index, 'incr')}};
         end
         {%- endif %}
         {%- if child.is_down_counter %}
         // Counter decrement
-        if ({{signal(child)}}_decr{{index}}) begin
-            {{signal(child)}}_q{{index}} <= {{signal(child)}}_q{{index}} - {{get_counter_value(child, index, 'decr')}};
+        {{signal(child)}}_underflow{{index}} <= 1'b0;
+        if ({{get_counter_enable(child, index, 'decr')}}) begin
+            { {{signal(child)}}_underflow{{index}},
+              {{signal(child)}}_q{{index}} } <= {{signal(child)}}_q{{index}} - {{get_counter_value(child, index, 'decr')}};
         end
         {%- endif %}
     end
+
 
 {%- endif %}
 
