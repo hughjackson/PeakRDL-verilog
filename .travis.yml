@@ -41,7 +41,7 @@ jobs:
         # generate all verilog
         - python mintest.py
         # lint all verilog RFs (no TBs)
-        - docker run -ti -v ${PWD}:/work --user $(id -u):$(id -g) verilator/verilator:latest --lint-only -Wall test/testcases/*_rf.sv
+        - docker run -ti -v ${PWD}:/work --user $(id -u):$(id -g) verilator/verilator:latest --lint-only -Wall -Wno-MULTITOP test/testcases/*_rf.sv
 
     # Deploy source distribution
     - stage: deploy
