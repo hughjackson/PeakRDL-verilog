@@ -38,10 +38,10 @@ jobs:
     - name: Verilator Lint
       script:
         - python -m pip install .
-        - python mintest.py basic test/testcases/basic.rdl
-        - python mintest.py counter test/testcases/counter.rdl
-        - docker run -ti -v ${PWD}:/work --user $(id -u):$(id -g) verilator/verilator:latest --lint-only -Wall test/testcases/basic.sv
-        - docker run -ti -v ${PWD}:/work --user $(id -u):$(id -g) verilator/verilator:latest --lint-only -Wall test/testcases/counter.sv
+        # generate all verilog
+        - python mintest.py
+        # lint all verilog RFs (no TBs)
+        - docker run -ti -v ${PWD}:/work --user $(id -u):$(id -g) verilator/verilator:latest --lint-only -Wall test/testcases/*_rf.sv
 
     # Deploy source distribution
     - stage: deploy
