@@ -10,6 +10,17 @@
             @(posedge clk); \
             ``name``_wr``idx <= '0;
 
+`define HW_COUNT(name, idx, dir) \
+            ``name``_``dir````idx <= 1'b1; \
+            @(posedge clk); \
+            ``name``_``dir````idx <= 1'b0; \
+
+`define HW_COUNT_VAL(name, idx, dir, val) \
+            ``name``_``dir````idx <= 1'b1; \
+            ``name``_``dir``value``idx <= val; \
+            @(posedge clk); \
+            ``name``_``dir````idx <= 1'b0; \
+
 `define SW_READ(sw_addr) \
             valid <= 1'b1; \
             read <= 1'b1; \
@@ -92,6 +103,9 @@ module {{get_inst_name(top_node)}}_tb #(
     ) dut (.*);
 
     initial begin
+        logic [DATA_WIDTH-1:0] temp;
+        logic [DATA_WIDTH-1:0] value;
+
         // init all hw inputs
 {%- for node in top_node.descendants() -%}
 {%- if isinstance(node, FieldNode) %}
@@ -100,15 +114,15 @@ module {{get_inst_name(top_node)}}_tb #(
         {{signal(node)}}_wdata <= '0;
 {%- endif -%}
 {%- if node.is_up_counter %}
-    {{signal(node)}}_incr <= '0;
+        {{signal(node)}}_incr <= '0;
     {%- if node.get_property('incrwidth') %}
-    {{signal(node)}}_incrvalue <= '0;
+        {{signal(node)}}_incrvalue <= '0;
     {%- endif -%}
 {%- endif -%}
 {%- if node.is_down_counter %}
-    {{signal(node)}}_decr <= '0;
+        {{signal(node)}}_decr <= '0;
     {%- if node.get_property('decrwidth') %}
-    {{signal(node)}}_decrvalue <= '0;
+        {{signal(node)}}_decrvalue <= '0;
     {%- endif -%}
 {%- endif -%}
 {%- endif -%}
@@ -129,7 +143,6 @@ module {{get_inst_name(top_node)}}_tb #(
         repeat(5) @(posedge clk);
         $display("%t: Testcase ({{signal(node)}} {{full_idx(node.parent)}}):", $time());
     {%- if node.is_hw_writable %}
-        // HW write - SW read
         $display("%t:\tHardware write test", $time());
         for (int IDX = {{node.lsb}}; IDX <= {{node.msb}}; ++IDX) begin
 
@@ -140,6 +153,56 @@ module {{get_inst_name(top_node)}}_tb #(
             `HW_WRITE( {{signal(node)}}, {{full_idx(node.parent)}}, 0 )
             `SW_READ( {{node.parent.absolute_address}} )
             `CHECK_EQUAL(rdata[{{node.bit_range}}], 0)
+
+        end
+    {%- endif -%}
+    {%- if node.is_up_counter %}
+        $display("%t:\tHardware increment test", $time());
+        for (int IDX = 0; IDX <= 4; ++IDX) begin
+
+            `SW_READ( {{node.parent.absolute_address}} )
+            temp = rdata[{{node.bit_range}}];
+
+        {%- if node.get_property('incrwidth') %}
+            value = $urandom_range(0,2**{{node.get_property('incrwidth')}}-1);
+            `HW_COUNT_VAL( {{signal(node)}}, {{full_idx(node.parent)}}, incr, value )
+        {%- elif type(node.get_property('incrvalue')) == type(node) %}
+            `SW_READ( {{node.get_property('incrvalue').parent.absolute_address}} )
+            value = rdata[{{node.get_property('incrvalue').bit_range}}];
+            `HW_COUNT( {{signal(node)}}, {{full_idx(node.parent)}}, incr )
+        {%- else %}
+            value = {{node.get_property('incrvalue', default=1)}};
+            `HW_COUNT( {{signal(node)}}, {{full_idx(node.parent)}}, incr )
+        {%- endif %}
+
+            `SW_READ( {{node.parent.absolute_address}} )
+            temp += value;
+            `CHECK_EQUAL(rdata[{{node.bit_range}}], temp[{{node.width}}-1:0])
+
+        end
+    {%- endif -%}
+    {%- if node.is_down_counter %}
+        $display("%t:\tHardware decrement test", $time());
+        for (int IDX = 0; IDX <= 4; ++IDX) begin
+
+            `SW_READ( {{node.parent.absolute_address}} )
+            temp = rdata[{{node.bit_range}}];
+
+        {%- if node.get_property('decrwidth') %}
+            value = $urandom_range(0,2**{{node.get_property('decrwidth')}}-1);
+            `HW_COUNT_VAL( {{signal(node)}}, {{full_idx(node.parent)}}, decr, value )
+        {%- elif type(node.get_property('decrvalue')) == type(node) %}
+            `SW_READ( {{node.get_property('decrvalue').parent.absolute_address}} )
+            value = rdata[{{node.get_property('decrvalue').bit_range}}];
+            `HW_COUNT( {{signal(node)}}, {{full_idx(node.parent)}}, decr )
+        {%- else %}
+            value = {{node.get_property('decrvalue', default=1)}};
+            `HW_COUNT( {{signal(node)}}, {{full_idx(node.parent)}}, decr )
+        {%- endif %}
+
+            `SW_READ( {{node.parent.absolute_address}} )
+            temp -= value;
+            `CHECK_EQUAL(rdata[{{node.bit_range}}], temp[{{node.width}}-1:0])
 
         end
     {%- endif -%}
