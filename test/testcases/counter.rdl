@@ -3,6 +3,12 @@ addrmap counter #(longint unsigned PARAM = 0x10) {
 
     reg {
         default sw = rw;
+        default hw = rw;
+        field {} basicfield[31:0];
+    } basicreg;
+
+    reg {
+        default sw = rw;
         default hw = r;
 
         field counter_f { counter; };
