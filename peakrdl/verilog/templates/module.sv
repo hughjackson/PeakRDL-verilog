@@ -53,12 +53,12 @@ module {{get_inst_name(top_node)}} #(
 );
 
     // local signals for fields
+/* verilator lint_off UNUSED */
 {%- for node in top_node.descendants() -%}
 {%- if isinstance(node, FieldNode) -%}
 {%- if not node.is_hw_readable %}
     logic       {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node)}}_q;
 {%- endif -%}
-/* verilator lint_off UNUSED */
 {%- if node.is_up_counter %}
     logic {{node.parent.full_array_ranges}}        {{signal(node)}}_overflow;
 {%- endif -%}
