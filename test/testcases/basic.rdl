@@ -20,7 +20,7 @@ addrmap basic #(longint unsigned PARAM = 0x10) {
             } f4[31:30] = 0;
             field {
                 sw=rw; hw=rw;
-                onwrite=wclr;
+                //onwrite=wclr;
                 hdl_path_slice = '{"f5_29", "f5_28"};
                 hdl_path_gate_slice = '{"f5_gate"};
             } f5[29:28] = 0;
