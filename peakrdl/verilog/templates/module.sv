@@ -16,7 +16,16 @@ module {{get_inst_name(top_node)}}_rf #(
     // Register {{get_inst_name(node).upper()}}
     output logic {{node.full_array_ranges}}        {{signal(node)}}_strb,
 
+  {%- if node.has_intr %}
+    output logic {{node.full_array_ranges}}        {{signal(node)}}_intr,
+  {%- endif -%}
+
  {%- elif isinstance(node, FieldNode) -%}
+  {%- if node.get_property('intr') %}
+    // expand interrupt per field
+    output logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node)}}_intr,
+  {%- endif -%}
+
   {%- if node.is_hw_writable %}
     input  logic {{node.parent.full_array_ranges}}        {{signal(node)}}_wr,
     input  logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node)}}_wdata,
@@ -139,14 +148,12 @@ module {{get_inst_name(top_node)}}_rf #(
 {%- endfor %}
 
     assign rdata = // or of each register return (masked)
-{%- for node in top_node.descendants() -%}
-    {%- if isinstance(node, RegNode) %}
-        {%- for idx in node.full_array_indexes %}
-                   {{signal(node)}}_rdata{{idx}} |
-        {%- endfor -%}
-    {%- endif -%}
+{%- for node in top_node.descendants() if isinstance(node, RegNode) %}
+    {%- set outer_loop = loop %}
+    {%- for idx in node.full_array_indexes %}
+                   {{signal(node)}}_rdata{{idx}}{{ " | " if not (outer_loop.last and loop.last)else ";" }}
+    {%- endfor %}
 {%- endfor %}
-                   {DATA_WIDTH{1'b0}};
 
     {{ addressable.body(top_node)|indent}}
 

@@ -55,6 +55,7 @@ class VerilogExporter:
         RegNode.add_derived_property(self.full_array_ranges)
         RegNode.add_derived_property(self.full_array_indexes)
         RegNode.add_derived_property(self.signal_prefix)
+        RegNode.add_derived_property(self.has_intr)
         FieldNode.add_derived_property(self.is_hw_writable)
         FieldNode.add_derived_property(self.is_hw_readable)
         FieldNode.add_derived_property(self.is_up_counter)
@@ -152,6 +153,7 @@ class VerilogExporter:
                 'get_saturate_value': self._get_saturate_value,
                 'get_threshold_value': self._get_threshold_value,
                 'get_counter_value': self._get_counter_value,
+                'get_intr_enable': self._get_intr_enable,
                 'get_counter_enable': self._get_counter_enable,
             }
 
@@ -381,6 +383,30 @@ class VerilogExporter:
         return sw_value
 
 
+    def _get_intr_enable(self, node, index) -> str:
+        """
+        Returns the value or SV variable name for reference
+        """
+        enable = node.get_property('enable')
+        mask = node.get_property('mask')
+
+        if not enable and not mask:
+            return "{%0d{1'b1}}" % node.width
+        elif type(enable) == int:
+            return "{:0d}'h{}".format(node.width, enable)
+        elif enable:
+            ref = enable
+            mod = ''
+        elif type(mask) == int:
+            return "~{:0d}'h{}".format(node.width, mask)
+        elif mask:
+            ref = mask
+            mod = '~'
+
+        sw_value = "{}{}_q{}".format(mod, self._get_signal_prefix(ref), index)
+        return sw_value
+
+
     def signal_prefix(self, node: Node) -> str:
         """
         Returns unique-in-addrmap prefix for signals
@@ -482,3 +508,13 @@ class VerilogExporter:
             return fmt.format(lsb=0, msb=node.size*8-1)
         else:
             return fmt.format(lsb=node.lsb, msb=node.msb)
+
+
+    def has_intr(self, node : RegNode) -> bool:
+        """
+        Register has interrupt fields
+        """
+        for f in node.fields():
+            if f.get_property('intr'):
+                return True
+        return False

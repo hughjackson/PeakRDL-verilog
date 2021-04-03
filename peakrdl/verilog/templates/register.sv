@@ -23,12 +23,24 @@ always_comb begin
 {%- endfor %}
 end
 
+{%- if node.has_intr %}
+
+// Combined interrupt
+assign {{signal(node)}}_intr = {% for child in node.fields() if child.get_property('intr') -%} 
+                                    ( | {{signal(child)}}_intr ){{ " | " if not loop.last else ";" }}
+                               {%- endfor -%}
+{%- endif %}
+
 // masked version of return data
 assign {{signal(node)}}_rdata{{index}} = {{signal(node)}}_sw_rd ? {{signal(node)}}_q : 'b0;
 
 {%- for child in node.fields() %}
 
 // Field: {{child.get_rel_path(node)}} 
+
+{%- if child.get_property('intr') %}
+assign {{signal(child)}}_intr{{index}} = {{signal(child)}}_q{{index}} && {{get_intr_enable(child, index)}};
+{%- endif %}
 
 {%- if not child.implements_storage %}
     {%- if child.is_hw_writable %}
