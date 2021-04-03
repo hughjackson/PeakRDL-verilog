@@ -276,11 +276,16 @@ class VerilogExporter:
         return s
 
 
-    def _get_signal_prefix(self, node: Node) -> str:
+    def _get_signal_prefix(self, node: Node, index : str = '', prop : str = '') -> str:
         """
-        Returns unique-in-addrmap prefix for signals
+        Returns unique-in-addrmap name for signals
         """
-        return node.get_rel_path(node.owning_addrmap,'','_','','')
+        prefix = node.get_rel_path(node.owning_addrmap,'','_','','')
+        suffix = prop
+        if prop:
+            return "{}_{}{}".format(prefix, suffix, index)
+        else:
+            return "{}{}".format(prefix, index)
 
 
     def _get_bus_width(self, node: Node) -> int:

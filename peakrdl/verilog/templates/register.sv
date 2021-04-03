@@ -14,60 +14,60 @@ assign {{signal(node)}}_decode = (addr == ({{offset}}));
 assign {{signal(node)}}_sw_wr = valid && !read && {{signal(node)}}_decode;
 assign {{signal(node)}}_sw_rd = valid &&  read && {{signal(node)}}_decode;
 
-assign {{signal(node)}}_strb{{index}} = {{signal(node)}}_sw_wr;
+assign {{signal(node, index, 'strb')}} = {{signal(node)}}_sw_wr;
 
 always_comb begin
     {{signal(node)}}_q = '0;
 {%- for child in node.fields() %}
-    {{signal(node)}}_q[{{child.bit_range}}] = {{signal(child)}}_q{{index}};
+    {{signal(node)}}_q[{{child.bit_range}}] = {{signal(child, index, 'q')}};
 {%- endfor %}
 end
 
 {%- if node.has_intr %}
 
 // Combined interrupt
-assign {{signal(node)}}_intr = {% for child in node.fields() if child.get_property('intr') -%} 
-                                    ( | {{signal(child)}}_intr ){{ " | " if not loop.last else ";" }}
-                               {%- endfor -%}
+assign {{signal(node, '', 'intr')}} = {% for child in node.fields() if child.get_property('intr') -%} 
+                                        ( | {{signal(child, index, 'intr')}} ){{ " | " if not loop.last else ";" }}
+                                      {%- endfor -%}
 {%- endif %}
 
 // masked version of return data
-assign {{signal(node)}}_rdata{{index}} = {{signal(node)}}_sw_rd ? {{signal(node)}}_q : 'b0;
+assign {{signal(node, index, 'rdata')}} = {{signal(node)}}_sw_rd ? {{signal(node)}}_q : 'b0;
 
 {%- for child in node.fields() %}
 
 // Field: {{child.get_rel_path(node)}} 
 
 {%- if child.get_property('intr') %}
-assign {{signal(child)}}_intr{{index}} = {{signal(child)}}_q{{index}} && {{get_intr_enable(child, index)}};
+assign {{signal(child, index, 'intr')}} = {{signal(child, index, 'q')}} && {{get_intr_enable(child, index)}};
 {%- endif %}
 
 {%- if not child.implements_storage %}
     {%- if child.is_hw_writable %}
-assign {{signal(child)}}_q{{index}} = {{signal(child)}}_wdata;
+assign {{signal(child, index, 'q')}} = {{signal(child)}}_wdata;
 
     {%- else %}
-assign {{signal(child)}}_q{{index}} = {{child.get_property('reset')}};
+assign {{signal(child, index, 'q')}} = {{child.get_property('reset')}};
 
     {%- endif %}
 {%- else %}
 always_ff @ (posedge clk, negedge resetn)
     if (~resetn) begin
-        {{signal(child)}}_q{{index}} <= {{child.get_property('reset', default=0)}};
+        {{signal(child, index, 'q')}} <= {{child.get_property('reset', default=0)}};
     end else begin
         {%- if child.get_property('singlepulse') %}
         // Defined as single pulse, clear value from last cycle
-        {{signal(child)}}_q{{index}} <= '0;
+        {{signal(child, index, 'q')}} <= '0;
         {%- endif %}
 
         {%- if child.is_sw_readable and child.get_property('onread') %}
         // Software read
         if ({{signal(node)}}_sw_rd) begin
         {%- if child.get_property('onread') == OnReadType.rclr %}
-            {{signal(child)}}_q{{index}} <= '0;
+            {{signal(child, index, 'q')}} <= '0;
 
         {%- elif child.get_property('onread') == OnReadType.rset %}
-            {{signal(child)}}_q{{index}} <= '1;
+            {{signal(child, index, 'q')}} <= '1;
 
         {%- endif %}
         end
@@ -77,31 +77,31 @@ always_ff @ (posedge clk, negedge resetn)
         // Software write
         if ({{signal(node)}}_sw_wr) begin
         {%- if child.get_property('onwrite') == OnWriteType.woset %}
-            {{signal(child)}}_q{{index}} <=  masked_data[{{child.bit_range}}] |  {{signal(child)}}_q{{index}};
+            {{signal(child, index, 'q')}} <=  masked_data[{{child.bit_range}}] |  {{signal(child, index, 'q')}};
 
         {%- elif child.get_property('onwrite') == OnWriteType.woclr %}
-            {{signal(child)}}_q{{index}} <= ~masked_data[{{child.bit_range}}] &  {{signal(child)}}_q{{index}};
+            {{signal(child, index, 'q')}} <= ~masked_data[{{child.bit_range}}] &  {{signal(child, index, 'q')}};
 
         {%- elif child.get_property('onwrite') == OnWriteType.wot %}
-            {{signal(child)}}_q{{index}} <=  masked_data[{{child.bit_range}}] ^  {{signal(child)}}_q{{index}};
+            {{signal(child, index, 'q')}} <=  masked_data[{{child.bit_range}}] ^  {{signal(child, index, 'q')}};
 
         {%- elif child.get_property('onwrite') == OnWriteType.wzs %}
-            {{signal(child)}}_q{{index}} <= ~masked_data[{{child.bit_range}}] |  {{signal(child)}}_q{{index}};
+            {{signal(child, index, 'q')}} <= ~masked_data[{{child.bit_range}}] |  {{signal(child, index, 'q')}};
 
         {%- elif child.get_property('onwrite') == OnWriteType.wzc %}
-            {{signal(child)}}_q{{index}} <=  masked_data[{{child.bit_range}}] &  {{signal(child)}}_q{{index}};
+            {{signal(child, index, 'q')}} <=  masked_data[{{child.bit_range}}] &  {{signal(child, index, 'q')}};
 
         {%- elif child.get_property('onwrite') == OnWriteType.wzt %}
-            {{signal(child)}}_q{{index}} <= ~masked_data[{{child.bit_range}}] ^  {{signal(child)}}_q{{index}};
+            {{signal(child, index, 'q')}} <= ~masked_data[{{child.bit_range}}] ^  {{signal(child, index, 'q')}};
 
         {%- elif child.get_property('onwrite') == OnWriteType.wclr %}
-            {{signal(child)}}_q{{index}} <= '0;
+            {{signal(child, index, 'q')}} <= '0;
 
         {%- elif child.get_property('onwrite') == OnWriteType.wset %}
-            {{signal(child)}}_q{{index}} <= '1;
+            {{signal(child, index, 'q')}} <= '1;
 
         {%- else %}
-            {{signal(child)}}_q{{index}} <=  masked_data[{{child.bit_range}}] | ({{signal(child)}}_q{{index}} & ~mask[{{child.bit_range}}]);
+            {{signal(child, index, 'q')}} <=  masked_data[{{child.bit_range}}] | ({{signal(child, index, 'q')}} & ~mask[{{child.bit_range}}]);
 
         {%- endif %}
         end
@@ -109,40 +109,40 @@ always_ff @ (posedge clk, negedge resetn)
 
         {%- if child.is_hw_writable %}
         // Hardware Write
-        if ({{signal(child)}}_wr{{index}}) begin
-            {{signal(child)}}_q{{index}} <= {{signal(child)}}_wdata{{index}};
+        if ({{signal(child, index, 'wr')}}) begin
+            {{signal(child, index, 'q')}} <= {{signal(child, index, 'wdata')}};
         end
         {%- endif -%}
 
         {%- if child.is_up_counter %}
         // Counter increment
-        {{signal(child)}}_overflow{{index}} <= 1'b0;
+        {{signal(child, index, 'overflow')}} <= 1'b0;
         if ({{get_counter_enable(child, index, 'incr')}}) begin
             logic [{{child.msb+1}}:{{child.lsb}}] next;
             /* verilator lint_off WIDTH */
-            next = {{signal(child)}}_q{{index}} + {{get_counter_value(child, index, 'incr')}};
+            next = {{signal(child, index, 'q')}} + {{get_counter_value(child, index, 'incr')}};
             /* verilator lint_on WIDTH */
 
-            { {{signal(child)}}_overflow{{index}},
-             {{signal(child)}}_q{{index}} } <= next;
+            { {{signal(child, index, 'overflow')}},
+             {{signal(child, index, 'q')}} } <= next;
 
             {%- if child.get_property('incrsaturate') %}
             // saturate
-            {{signal(child)}}_overflow{{index}} <= 1'b0;
-            {{signal(child)}}_incrsaturate{{index}} <= 1'b0;
+            {{signal(child, index, 'overflow')}} <= 1'b0;
+            {{signal(child, index, 'incrsaturate')}} <= 1'b0;
             if (next[{{child.msb+1}}] ||
                 (next[{{child.bit_range}}] >= {{get_saturate_value(child, index, 'incr')}})) begin
-                {{signal(child)}}_q{{index}} <= {{get_saturate_value(child, index, 'incr')}};
-                {{signal(child)}}_incrsaturate{{index}} <= 1'b1;
+                {{signal(child, index, 'q')}} <= {{get_saturate_value(child, index, 'incr')}};
+                {{signal(child, index, 'incrsaturate')}} <= 1'b1;
             end
             {%- endif %}
 
             {%- if child.get_property('incrthreshold') %}
             // threshold
-            {{signal(child)}}_incrthreshold{{index}} <= 1'b0;
+            {{signal(child, index, 'incrthreshold')}} <= 1'b0;
             if (next[{{child.msb+1}}] ||
                 (next[{{child.bit_range}}] >= {{get_threshold_value(child, index, 'incr')}})) begin
-                {{signal(child)}}_incrthreshold{{index}} <= 1'b1;
+                {{signal(child, index, 'incrthreshold')}} <= 1'b1;
             end
             {%- endif %}
         end
@@ -150,35 +150,35 @@ always_ff @ (posedge clk, negedge resetn)
 
         {%- if child.is_down_counter %}
         // Counter decrement
-        {{signal(child)}}_underflow{{index}} <= 1'b0;
+        {{signal(child, index, 'underflow')}} <= 1'b0;
         if ({{get_counter_enable(child, index, 'decr')}}) begin
             logic [{{child.msb+1}}:{{child.lsb}}] next;
             /* verilator lint_off WIDTH */
-            next = {{signal(child)}}_q{{index}} - {{get_counter_value(child, index, 'decr')}};
+            next = {{signal(child, index, 'q')}} - {{get_counter_value(child, index, 'decr')}};
             /* verilator lint_on WIDTH */
 
-            { {{signal(child)}}_underflow{{index}},
-             {{signal(child)}}_q{{index}} } <= next;
+            { {{signal(child, index, 'underflow')}},
+             {{signal(child, index, 'q')}} } <= next;
 
             {%- if child.get_property('decrsaturate') %}
 
             // saturate
-            {{signal(child)}}_underflow{{index}} <= 1'b0;
-            {{signal(child)}}_decrsaturate{{index}} <= 1'b0;
+            {{signal(child, index, 'underflow')}} <= 1'b0;
+            {{signal(child, index, 'decrsaturate')}} <= 1'b0;
             if (next[{{child.msb+1}}] ||
                 (next[{{child.bit_range}}] <= {{get_saturate_value(child, index, 'decr')}})) begin
-                {{signal(child)}}_q{{index}} <= {{get_saturate_value(child, index, 'decr')}};
-                {{signal(child)}}_decrsaturate{{index}} <= 1'b1;
+                {{signal(child, index, 'q')}} <= {{get_saturate_value(child, index, 'decr')}};
+                {{signal(child, index, 'decrsaturate')}} <= 1'b1;
             end
             {%- endif %}
 
             {%- if child.get_property('decrthreshold') %}
 
             // threshold
-            {{signal(child)}}_decrthreshold{{index}} <= 1'b0;
+            {{signal(child, index, 'decrthreshold')}} <= 1'b0;
             if (next[{{child.msb+1}}] ||
                 (next[{{child.bit_range}}] <= {{get_threshold_value(child, index, 'decr')}})) begin
-                {{signal(child)}}_decrthreshold{{index}} <= 1'b1;
+                {{signal(child, index, 'decrthreshold')}} <= 1'b1;
             end
             {%- endif %}
         end
