@@ -109,6 +109,7 @@ module {{get_inst_name(top_node)}}_tb #(
     ) dut (.*);
 
     initial begin
+        logic                  carry;
         logic [DATA_WIDTH-1:0] temp;
         logic [DATA_WIDTH-1:0] value;
 
@@ -182,7 +183,7 @@ module {{get_inst_name(top_node)}}_tb #(
         {%- endif %}
 
             // increment
-            temp += value;
+            {carry, temp} = temp + value;
             
             // saturate
         {%- if type(node.get_property('incrsaturate')) == type(node) %}
@@ -194,6 +195,7 @@ module {{get_inst_name(top_node)}}_tb #(
         {%- if node.get_property('incrsaturate') %}
             #1 `CHECK_EQUAL({{signal(node)}}_incrsaturate{{full_idx(node.parent)}}, temp >= value)
             if (temp >= value) temp = value;
+            if (temp >= value) carry = 0; // no wrap if saturated
         {%- endif %}
 
             // threshold
@@ -205,6 +207,11 @@ module {{get_inst_name(top_node)}}_tb #(
         {%- endif %}
         {%- if node.get_property('incrthreshold') %}
             #1 `CHECK_EQUAL({{signal(node)}}_incrthreshold{{full_idx(node.parent)}}, temp >= value)
+        {%- endif %}
+
+            // wrap
+        {%- if node.get_property('overflow') %}
+            #1 `CHECK_EQUAL({{signal(node)}}_overflow{{full_idx(node.parent)}}, carry)
         {%- endif %}
 
             `SW_READ( {{node.parent.absolute_address}} )
@@ -232,7 +239,7 @@ module {{get_inst_name(top_node)}}_tb #(
         {%- endif %}
 
             // decrement
-            temp -= value;
+            {carry, temp} = temp - value;
             
             // saturate
         {%- if type(node.get_property('decrsaturate')) == type(node) %}
@@ -244,6 +251,7 @@ module {{get_inst_name(top_node)}}_tb #(
         {%- if node.get_property('decrsaturate') %}
             #1 `CHECK_EQUAL({{signal(node)}}_decrsaturate{{full_idx(node.parent)}}, temp <= value)
             if (temp <= value) temp = value;
+            if (temp >= value) carry = 0; // no wrap if saturated
         {%- endif %}
 
             // threshold
@@ -255,6 +263,11 @@ module {{get_inst_name(top_node)}}_tb #(
         {%- endif %}
         {%- if node.get_property('decrthreshold') %}
             #1 `CHECK_EQUAL({{signal(node)}}_decrthreshold{{full_idx(node.parent)}}, temp <= value)
+        {%- endif %}
+
+            // wrap
+        {%- if node.get_property('overflow') %}
+            #1 `CHECK_EQUAL({{signal(node)}}_underflow{{full_idx(node.parent)}}, carry)
         {%- endif %}
 
             `SW_READ( {{node.parent.absolute_address}} )
