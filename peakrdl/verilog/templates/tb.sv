@@ -65,15 +65,21 @@ module {{get_inst_name(top_node)}}_tb #(
 {%- endif -%}
 {%- if node.is_up_counter %}
     logic {{node.parent.full_array_ranges}}        {{signal(node)}}_incr;
-    {%- if node.get_property('incrwidth') %}
+  {%- if node.get_property('incrwidth') %}
     logic {{node.parent.full_array_ranges}}[{{node.get_property('incrwidth')}}-1:0] {{signal(node)}}_incrvalue;
-    {%- endif -%}
+  {%- endif -%}
+    logic {{node.parent.full_array_ranges}}        {{signal(node)}}_overflow;
+    logic {{node.parent.full_array_ranges}}        {{signal(node)}}_incrthreshold;
+    logic {{node.parent.full_array_ranges}}        {{signal(node)}}_incrsaturate;
 {%- endif -%}
 {%- if node.is_down_counter %}
     logic {{node.parent.full_array_ranges}}        {{signal(node)}}_decr;
-    {%- if node.get_property('decrwidth') %}
+  {%- if node.get_property('decrwidth') %}
     logic {{node.parent.full_array_ranges}}[{{node.get_property('decrwidth')}}-1:0] {{signal(node)}}_decrvalue;
-    {%- endif -%}
+  {%- endif -%}
+    logic {{node.parent.full_array_ranges}}        {{signal(node)}}_underflow;
+    logic {{node.parent.full_array_ranges}}        {{signal(node)}}_decrthreshold;
+    logic {{node.parent.full_array_ranges}}        {{signal(node)}}_decrsaturate;
 {%- endif -%}
 {%- endif -%}
 {%- endfor %}
