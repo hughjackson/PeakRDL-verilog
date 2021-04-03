@@ -64,7 +64,9 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-      - uses: drom/action-verilator@v0.1.11
+      
+      - name: Install verilator
+        run: sudo apt-get install verilator
 
       - name: Verilator Lint
         run: verilator --lint-only -Wall -Wno-MULTITOP test/testcases/*_rf.sv
