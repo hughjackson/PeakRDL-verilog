@@ -106,7 +106,7 @@ always_ff @ (posedge clk, negedge resetn)
         // Counter increment
         {{signal(child)}}_overflow{{index}} <= 1'b0;
         if ({{get_counter_enable(child, index, 'incr')}}) begin
-            logic [{{child.msb+1}}] next;
+            logic [{{child.msb+1}}:{{child.lsb}}] next;
             /* verilator lint_off WIDTH */
             next = {{signal(child)}}_q{{index}} + {{get_counter_value(child, index, 'incr')}};
             /* verilator lint_on WIDTH */
@@ -138,7 +138,7 @@ always_ff @ (posedge clk, negedge resetn)
         // Counter decrement
         {{signal(child)}}_underflow{{index}} <= 1'b0;
         if ({{get_counter_enable(child, index, 'decr')}}) begin
-            logic [{{child.msb+1}}] next;
+            logic [{{child.msb+1}}:{{child.lsb}}] next;
             /* verilator lint_off WIDTH */
             next = {{signal(child)}}_q{{index}} - {{get_counter_value(child, index, 'decr')}};
             /* verilator lint_on WIDTH */
