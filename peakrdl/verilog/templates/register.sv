@@ -14,8 +14,6 @@ assign {{signal(node)}}_decode = (addr == ({{offset}}));
 assign {{signal(node)}}_sw_wr = valid && !read && {{signal(node)}}_decode;
 assign {{signal(node)}}_sw_rd = valid &&  read && {{signal(node)}}_decode;
 
-assign {{signal(node, index, 'strb')}} = {{signal(node)}}_sw_wr;
-
 always_comb begin
     {{signal(node)}}_q = '0;
 {%- for child in node.fields() %}
@@ -54,7 +52,14 @@ assign {{signal(child, index, 'q')}} = {{child.get_property('reset')}};
 always_ff @ (posedge clk, negedge resetn)
     if (~resetn) begin
         {{signal(child, index, 'q')}} <= {{child.get_property('reset', default=0)}};
+        {%- if child.get_property('swmod') %}
+        {{signal(child, index, 'swmod')}} <= 1'b0;
+        {%- endif %}
     end else begin
+        {%- if child.get_property('swmod') %}
+        {{signal(child, index, 'swmod')}} <= 1'b0;
+        {%- endif %}
+
         {%- if child.get_property('singlepulse') %}
         // Defined as single pulse, clear value from last cycle
         {{signal(child, index, 'q')}} <= '0;
@@ -63,6 +68,11 @@ always_ff @ (posedge clk, negedge resetn)
         {%- if child.is_sw_readable and child.get_property('onread') %}
         // Software read
         if ({{signal(node)}}_sw_rd) begin
+
+        {%- if child.get_property('swmod') %}
+            {{signal(child, index, 'swmod')}} <= 1'b1;
+        {%- endif %}
+
         {%- if child.get_property('onread') == OnReadType.rclr %}
             {{signal(child, index, 'q')}} <= '0;
 
@@ -76,6 +86,11 @@ always_ff @ (posedge clk, negedge resetn)
         {%- if child.is_sw_writable %}
         // Software write
         if ({{signal(node)}}_sw_wr) begin
+
+        {%- if child.get_property('swmod') %}
+            {{signal(child, index, 'swmod')}} <= 1'b1;
+        {%- endif %}
+
         {%- if child.get_property('onwrite') == OnWriteType.woset %}
             {{signal(child, index, 'q')}} <=  masked_data[{{child.bit_range}}] |  {{signal(child, index, 'q')}};
 

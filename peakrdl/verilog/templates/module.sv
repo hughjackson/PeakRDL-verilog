@@ -14,13 +14,15 @@ module {{get_inst_name(top_node)}}_rf #(
  {%- if isinstance(node, RegNode) %}
 
     // Register {{get_inst_name(node).upper()}}
-    output logic {{node.full_array_ranges}}        {{signal(node, '', 'strb')}},
-
   {%- if node.has_intr %}
     output logic {{node.full_array_ranges}}        {{signal(node, '', 'intr')}},
   {%- endif -%}
 
  {%- elif isinstance(node, FieldNode) -%}
+  {%- if node.get_property('swmod') %}
+    output logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'swmod')}},
+  {%- endif %}
+
   {%- if node.get_property('intr') %}
     // expand interrupt per field
     output logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node, '', 'intr')}},

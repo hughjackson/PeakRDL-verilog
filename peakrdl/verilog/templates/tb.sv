@@ -51,25 +51,27 @@ module {{get_inst_name(top_node)}}_tb #(
 {%- if isinstance(node, RegNode) %}
 
     // Register {{get_inst_name(node).upper()}}
-    logic {{node.full_array_ranges}}        {{signal(node, '', 'strb')}};
   {%- if node.has_intr %}
     logic {{node.full_array_ranges}}        {{signal(node, '', 'intr')}};
-  {%- endif -%}
+  {%- endif %}
 
 {%- elif isinstance(node, FieldNode) -%}
-{%- if node.is_hw_writable %}
+  {%- if node.get_property('swmod') %}
+    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'swmod')}};
+  {%- endif %}
+ {%- if node.is_hw_writable %}
     logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'wr')}};
     logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node, '', 'wdata')}};
 
-{%- endif -%}
-{%- if node.is_hw_readable %}
+ {%- endif -%}
+ {%- if node.is_hw_readable %}
     logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node, '', 'q')}};
 
-{%- endif -%}
+ {%- endif -%}
   {%- if node.get_property('intr') %}
     logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node, '', 'intr')}};
   {%- endif -%}
-{%- if node.is_up_counter %}
+ {%- if node.is_up_counter %}
     logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'incr')}};
   {%- if node.get_property('incrwidth') %}
     logic {{node.parent.full_array_ranges}}[{{node.get_property('incrwidth')}}-1:0] {{signal(node, '', 'incrvalue')}};
@@ -77,8 +79,8 @@ module {{get_inst_name(top_node)}}_tb #(
     logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'overflow')}};
     logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'incrthreshold')}};
     logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'incrsaturate')}};
-{%- endif -%}
-{%- if node.is_down_counter %}
+ {%- endif -%}
+ {%- if node.is_down_counter %}
     logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'decr')}};
   {%- if node.get_property('decrwidth') %}
     logic {{node.parent.full_array_ranges}}[{{node.get_property('decrwidth')}}-1:0] {{signal(node, '', 'decrvalue')}};
@@ -86,7 +88,7 @@ module {{get_inst_name(top_node)}}_tb #(
     logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'underflow')}};
     logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'decrthreshold')}};
     logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'decrsaturate')}};
-{%- endif -%}
+ {%- endif -%}
 {%- endif -%}
 {%- endfor %}
 
