@@ -118,7 +118,8 @@ always_ff @ (posedge clk, negedge resetn)
             // saturate
             {{signal(child)}}_overflow{{index}} = 1'b0;
             {{signal(child)}}_incrsaturate{{index}} = 1'b0;
-            if (next >= {{get_saturate_value(child, index, 'incr')}}) begin
+            if (next[{{child.msb+1}}] ||
+                (next[{{child.bit_range}}] >= {{get_saturate_value(child, index, 'incr')}})) begin
                 {{signal(child)}}_q{{index}} <= {{get_saturate_value(child, index, 'incr')}};
                 {{signal(child)}}_incrsaturate{{index}} <= 1'b1;
             end
@@ -127,7 +128,8 @@ always_ff @ (posedge clk, negedge resetn)
             {%- if child.get_property('incrthreshold') %}
             // threshold
             {{signal(child)}}_incrthreshold{{index}} = 1'b0;
-            if (next >= {{get_threshold_value(child, index, 'incr')}}) begin
+            if (next[{{child.msb+1}}] ||
+                (next[{{child.bit_range}}] >= {{get_threshold_value(child, index, 'incr')}})) begin
                 {{signal(child)}}_incrthreshold{{index}} <= 1'b1;
             end
             {%- endif %}
@@ -151,7 +153,8 @@ always_ff @ (posedge clk, negedge resetn)
             // saturate
             {{signal(child)}}_underflow{{index}} = 1'b0;
             {{signal(child)}}_decrsaturate{{index}} = 1'b0;
-            if (next >= {{get_saturate_value(child, index, 'decr')}}) begin
+            if (next[{{child.msb+1}}] ||
+                (next[{{child.bit_range}}] <= {{get_saturate_value(child, index, 'decr')}})) begin
                 {{signal(child)}}_q{{index}} <= {{get_saturate_value(child, index, 'decr')}};
                 {{signal(child)}}_decrsaturate{{index}} <= 1'b1;
             end
@@ -161,7 +164,8 @@ always_ff @ (posedge clk, negedge resetn)
 
             // threshold
             {{signal(child)}}_decrthreshold{{index}} = 1'b0;
-            if (next >= {{get_threshold_value(child, index, 'decr')}}) begin
+            if (next[{{child.msb+1}}] ||
+                (next[{{child.bit_range}}] <= {{get_threshold_value(child, index, 'decr')}})) begin
                 {{signal(child)}}_decrthreshold{{index}} <= 1'b1;
             end
             {%- endif %}
