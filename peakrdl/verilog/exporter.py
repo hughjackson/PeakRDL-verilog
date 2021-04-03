@@ -22,6 +22,7 @@ class VerilogExporter:
         """
         user_template_dir = kwargs.pop("user_template_dir", None)
         self.user_template_context = kwargs.pop("user_template_context", dict())
+        self.signal_overrides = {}
 
         # Check for stray kwargs
         if kwargs:
@@ -54,7 +55,6 @@ class VerilogExporter:
         RegNode.add_derived_property(self.full_array_dimensions)
         RegNode.add_derived_property(self.full_array_ranges)
         RegNode.add_derived_property(self.full_array_indexes)
-        RegNode.add_derived_property(self.signal_prefix)
         RegNode.add_derived_property(self.has_intr)
         FieldNode.add_derived_property(self.is_hw_writable)
         FieldNode.add_derived_property(self.is_hw_readable)
@@ -63,7 +63,6 @@ class VerilogExporter:
         FieldNode.add_derived_property(self.bit_range)
         FieldNode.add_derived_property(self.full_array_ranges)
         FieldNode.add_derived_property(self.full_array_dimensions)
-        FieldNode.add_derived_property(self.signal_prefix)
         RegfileNode.add_derived_property(self.full_array_dimensions)
         RegfileNode.add_derived_property(self.full_array_ranges)
 
@@ -94,13 +93,13 @@ class VerilogExporter:
             internal `AddrmapNode`.
         path: str
             Output file.
-        example: bool
-            If True (Default), Verilog register model is exported as a SystemVerilog
-            package. Package name is based on the output file name.
-
-            If False, register model is exported as an includable header.
+        signal_overrides: dict
+            Mapping to override default signal suffixes , e.g. {'incr' : 'increment'}
         """
-        #example_arg = kwargs.pop("example_arg", True)
+        self.signal_overrides = kwargs.pop("signal_overrides", dict())
+        if type(self.signal_overrides) != dict:
+            raise TypeError("got an unexpected signal_overrides argument of type {} instead of dict".format(
+                                type(self.signal_overrides)))
 
         # Check for stray kwargs
         if kwargs:
@@ -141,7 +140,7 @@ class VerilogExporter:
                 'OnWriteType': OnWriteType,
                 'OnReadType': OnReadType,
                 'isinstance': isinstance,
-                'signal': self._get_signal_prefix,
+                'signal': self._get_signal_name,
                 'full_idx': self._full_idx,
                 'get_inst_name': self._get_inst_name,
                 'get_field_access': self._get_field_access,
@@ -276,12 +275,15 @@ class VerilogExporter:
         return s
 
 
-    def _get_signal_prefix(self, node: Node, index : str = '', prop : str = '') -> str:
+    def _get_signal_name(self, node: Node, index : str = '', prop : str = '') -> str:
         """
         Returns unique-in-addrmap name for signals
         """
         prefix = node.get_rel_path(node.owning_addrmap,'','_','','')
-        suffix = prop
+
+        # check for override, otherwise use prop
+        suffix = self.signal_overrides.get(prop, prop)
+
         if prop:
             return "{}_{}{}".format(prefix, suffix, index)
         else:
@@ -321,15 +323,12 @@ class VerilogExporter:
         """
         enable = node.get_property(prop)
 
-        hw_enable = "{}_{}{}".format(self._get_signal_prefix(node), prop, index)
-
         if not enable:
-            return hw_enable
+            return self._get_signal_name(node, index, prop)
         ref = enable.node
         ref_prop = type(enable).__name__.split('_')[1]
 
-        sw_value = "{}_{}{}"      .format(self._get_signal_prefix(ref), ref_prop, index)
-        return sw_value
+        return self._get_signal_name(ref, index, ref_prop)
 
 
     def _get_threshold_value(self, node, index, prop) -> str:
@@ -345,8 +344,7 @@ class VerilogExporter:
         if val.parent != node.parent:
             print("ERROR: incrsturate reference only supported for fields in same reg")
 
-        sw_value = "{}_q{}".format(self._get_signal_prefix(val), index)
-        return sw_value
+        return self._get_signal_name(val, index, 'q')
 
 
     def _get_saturate_value(self, node, index, prop) -> str:
@@ -362,8 +360,7 @@ class VerilogExporter:
         if val.parent != node.parent:
             print("ERROR: incrsturate reference only supported for fields in same reg")
 
-        sw_value = "{}_q{}".format(self._get_signal_prefix(val), index)
-        return sw_value
+        return self._get_signal_name(val, index, 'q')
 
 
     def _get_counter_value(self, node, index, prop) -> str:
@@ -373,10 +370,8 @@ class VerilogExporter:
         val = node.get_property(prop+'value')
         width = node.get_property(prop+'width')
 
-        hw_value = "{}_{}value{}".format(self._get_signal_prefix(node), prop, index)
-
         if width:
-            return hw_value
+            return self._get_signal_name(node, index, prop+'value')
         if not val:
             return 1 # default vlaue
         if type(val) == int:
@@ -384,8 +379,7 @@ class VerilogExporter:
         if val.parent != node.parent:
             print("ERROR: incrvalue reference only supported for fields in same reg")
 
-        sw_value = "{}_q{}".format(self._get_signal_prefix(val), index)
-        return sw_value
+        return self._get_signal_name(val, index, 'q')
 
 
     def _get_intr_enable(self, node, index) -> str:
@@ -408,15 +402,7 @@ class VerilogExporter:
             ref = mask
             mod = '~'
 
-        sw_value = "{}{}_q{}".format(mod, self._get_signal_prefix(ref), index)
-        return sw_value
-
-
-    def signal_prefix(self, node: Node) -> str:
-        """
-        Returns unique-in-addrmap prefix for signals
-        """
-        return node.get_rel_path(node.owning_addrmap,'','_','_','')
+        return self._get_signal_name(ref, index, 'q')
 
 
     def is_up_counter(self, node) -> bool:
