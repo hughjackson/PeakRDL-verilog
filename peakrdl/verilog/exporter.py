@@ -149,6 +149,8 @@ class VerilogExporter:
                 'get_mem_access': self._get_mem_access,
                 'roundup_to': self._roundup_to,
                 'roundup_pow2': self._roundup_pow2,
+                'get_saturate_value': self._get_saturate_value,
+                'get_threshold_value': self._get_threshold_value,
                 'get_counter_value': self._get_counter_value,
                 'get_counter_enable': self._get_counter_enable,
             }
@@ -323,6 +325,40 @@ class VerilogExporter:
         return sw_value
 
 
+    def _get_threshold_value(self, node, index, prop) -> str:
+        """
+        Returns the value or SV variable name for reference
+        """
+        val = node.get_property(prop+'threshold')
+
+        if type(val) == bool:
+            return 2**node.width-1 # default vlaue
+        if type(val) == int:
+            return val
+        if val.parent != node.parent:
+            print("ERROR: incrsturate reference only supported for fields in same reg")
+
+        sw_value = "{}_q{}".format(self._get_signal_prefix(val), index)
+        return sw_value
+
+
+    def _get_saturate_value(self, node, index, prop) -> str:
+        """
+        Returns the value or SV variable name for reference
+        """
+        val = node.get_property(prop+'saturate')
+
+        if type(val) == bool:
+            return 2**node.width-1 # default vlaue
+        if type(val) == int:
+            return val
+        if val.parent != node.parent:
+            print("ERROR: incrsturate reference only supported for fields in same reg")
+
+        sw_value = "{}_q{}".format(self._get_signal_prefix(val), index)
+        return sw_value
+
+
     def _get_counter_value(self, node, index, prop) -> str:
         """
         Returns the value or SV variable name for reference
@@ -341,7 +377,7 @@ class VerilogExporter:
         if val.parent != node.parent:
             print("ERROR: incrvalue reference only supported for fields in same reg")
 
-        sw_value = "{}_q{}"      .format(self._get_signal_prefix(val), index)
+        sw_value = "{}_q{}".format(self._get_signal_prefix(val), index)
         return sw_value
 
 

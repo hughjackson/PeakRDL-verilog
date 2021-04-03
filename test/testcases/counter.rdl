@@ -26,7 +26,7 @@ addrmap counter #(longint unsigned PARAM = 0x10) {
                                 // value of another field.
         counter_f count4[8]=0;
         count4->incrvalue = count4_incr; // Counter is incremented by the valu
-    } count[2];
+    } ex1_ch9_8_1;
 
     // 9.8.1 Example 2
     field some_counter {
@@ -46,4 +46,30 @@ addrmap counter #(longint unsigned PARAM = 0x10) {
     count1_high.count->incr = count1_low.count->overflow;
     // Daisy chain the counters together to create a 32 bit counter from the 2
     // 16 bit countersV
+
+    reg {
+        // 9.8.2 Example 1
+        field counter_f { counter; };
+
+        counter_f count1[4]; // Define a 4 bit counter from 3 down to 0
+        count1->incrsaturate=4'he; // keeps the counter from counting past 4'he
+
+        counter_f count2[3]; // Define a 3 bit counter from 6 down to 4
+        count2->decrthreshold=3'h2; // provide threshold indication when
+                                    // count reaches 2 or lower
+
+        counter_f count3[5]=0; // Defines a 5 bit counter from 11 down to 7
+        count3->incrsaturate;// Implies 5'h1F by default
+        count3->decrsaturate; // Implies 5'h00 by default
+        count3->decrthreshold=5'h3;
+
+        field {} count4_sat[4] = 4'ha; // define a field to control the saturate value
+                                        // of another field
+
+        field {} count4_thresh[4] =4'h2;
+
+        counter_f count4[4]=0; // This counters saturate and threshold are both dynamic
+        count4->incrthreshold = count4_thresh;
+        count4->incrsaturate = count4_sat;
+    } ex1_ch9_8_2;
 };

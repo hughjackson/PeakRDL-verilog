@@ -106,20 +106,69 @@ always_ff @ (posedge clk, negedge resetn)
         // Counter increment
         {{signal(child)}}_overflow{{index}} <= 1'b0;
         if ({{get_counter_enable(child, index, 'incr')}}) begin
+            logic [{{child.msb+1}}:{{child.lsb}}] next;
             /* verilator lint_off WIDTH */
-            { {{signal(child)}}_overflow{{index}},
-             {{signal(child)}}_q{{index}} } <= {{signal(child)}}_q{{index}} + {{get_counter_value(child, index, 'incr')}};
+            next = {{signal(child)}}_q{{index}} + {{get_counter_value(child, index, 'incr')}};
             /* verilator lint_on WIDTH */
+
+            { {{signal(child)}}_overflow{{index}},
+             {{signal(child)}}_q{{index}} } <= next;
+
+            {%- if child.get_property('incrsaturate') %}
+            // saturate
+            {{signal(child)}}_overflow{{index}} <= 1'b0;
+            {{signal(child)}}_incrsaturate{{index}} <= 1'b0;
+            if (next[{{child.msb+1}}] ||
+                (next[{{child.bit_range}}] >= {{get_saturate_value(child, index, 'incr')}})) begin
+                {{signal(child)}}_q{{index}} <= {{get_saturate_value(child, index, 'incr')}};
+                {{signal(child)}}_incrsaturate{{index}} <= 1'b1;
+            end
+            {%- endif %}
+
+            {%- if child.get_property('incrthreshold') %}
+            // threshold
+            {{signal(child)}}_incrthreshold{{index}} <= 1'b0;
+            if (next[{{child.msb+1}}] ||
+                (next[{{child.bit_range}}] >= {{get_threshold_value(child, index, 'incr')}})) begin
+                {{signal(child)}}_incrthreshold{{index}} <= 1'b1;
+            end
+            {%- endif %}
         end
         {%- endif %}
+
         {%- if child.is_down_counter %}
         // Counter decrement
         {{signal(child)}}_underflow{{index}} <= 1'b0;
         if ({{get_counter_enable(child, index, 'decr')}}) begin
+            logic [{{child.msb+1}}:{{child.lsb}}] next;
             /* verilator lint_off WIDTH */
-            { {{signal(child)}}_underflow{{index}},
-              {{signal(child)}}_q{{index}} } <= {{signal(child)}}_q{{index}} - {{get_counter_value(child, index, 'decr')}};
+            next = {{signal(child)}}_q{{index}} - {{get_counter_value(child, index, 'decr')}};
             /* verilator lint_on WIDTH */
+
+            { {{signal(child)}}_underflow{{index}},
+             {{signal(child)}}_q{{index}} } <= next;
+
+            {%- if child.get_property('decrsaturate') %}
+
+            // saturate
+            {{signal(child)}}_underflow{{index}} <= 1'b0;
+            {{signal(child)}}_decrsaturate{{index}} <= 1'b0;
+            if (next[{{child.msb+1}}] ||
+                (next[{{child.bit_range}}] <= {{get_saturate_value(child, index, 'decr')}})) begin
+                {{signal(child)}}_q{{index}} <= {{get_saturate_value(child, index, 'decr')}};
+                {{signal(child)}}_decrsaturate{{index}} <= 1'b1;
+            end
+            {%- endif %}
+
+            {%- if child.get_property('decrthreshold') %}
+
+            // threshold
+            {{signal(child)}}_decrthreshold{{index}} <= 1'b0;
+            if (next[{{child.msb+1}}] ||
+                (next[{{child.bit_range}}] <= {{get_threshold_value(child, index, 'decr')}})) begin
+                {{signal(child)}}_decrthreshold{{index}} <= 1'b1;
+            end
+            {%- endif %}
         end
         {%- endif %}
     end

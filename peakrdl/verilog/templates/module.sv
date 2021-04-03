@@ -11,34 +11,60 @@ module {{get_inst_name(top_node)}}_rf #(
     input logic                              resetn,
 
 {%- for node in top_node.descendants() -%}
-{%- if isinstance(node, RegNode) %}
+ {%- if isinstance(node, RegNode) %}
 
     // Register {{get_inst_name(node).upper()}}
     output logic {{node.full_array_ranges}}        {{signal(node)}}_strb,
 
-{%- elif isinstance(node, FieldNode) -%}
-{%- if node.is_hw_writable %}
+ {%- elif isinstance(node, FieldNode) -%}
+  {%- if node.is_hw_writable %}
     input  logic {{node.parent.full_array_ranges}}        {{signal(node)}}_wr,
     input  logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node)}}_wdata,
 
-{%- endif -%}
-{%- if node.is_hw_readable %}
+  {%- endif -%}
+
+  {%- if node.is_hw_readable %}
     output logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node)}}_q,
 
-{%- endif -%}
-{%- if node.is_up_counter and not node.get_property('incr') %}
+  {%- endif -%}
+
+  {%- if node.is_up_counter %}
+   {%- if not node.get_property('incr') %}
     input  logic {{node.parent.full_array_ranges}}        {{signal(node)}}_incr,
-    {%- if node.get_property('incrwidth') %}
+   {%- endif -%}
+   {%- if node.get_property('incrwidth') %}
     input  logic {{node.parent.full_array_ranges}}[{{node.get_property('incrwidth')}}-1:0] {{signal(node)}}_incrvalue,
-    {%- endif -%}
-{%- endif -%}
-{%- if node.is_down_counter and not node.get_property('decr') %}
+   {%- endif -%}
+   {%- if node.get_property('overflow') %}
+    output logic {{node.parent.full_array_ranges}}        {{signal(node)}}_overflow,
+   {%- endif -%}
+   {%- if node.get_property('incrthreshold') %}
+    output logic {{node.parent.full_array_ranges}}        {{signal(node)}}_incrthreshold,
+   {%- endif -%}
+   {%- if node.get_property('incrsaturate') %}
+    output logic {{node.parent.full_array_ranges}}        {{signal(node)}}_incrsaturate,
+   {%- endif -%}
+  {%- endif -%}
+
+  {%- if node.is_down_counter %}
+   {%- if not node.get_property('decr') %}
     input  logic {{node.parent.full_array_ranges}}        {{signal(node)}}_decr,
-    {%- if node.get_property('decrwidth') %}
+   {%- endif -%}
+   {%- if node.get_property('decrwidth') %}
     input  logic {{node.parent.full_array_ranges}}[{{node.get_property('decrwidth')}}-1:0] {{signal(node)}}_decrvalue,
-    {%- endif -%}
-{%- endif -%}
-{%- endif -%}
+   {%- endif -%}
+   {%- if node.get_property('underflow') %}
+    output logic {{node.parent.full_array_ranges}}        {{signal(node)}}_underflow,
+   {%- endif -%}
+   {%- if node.get_property('decrthreshold') %}
+    output logic {{node.parent.full_array_ranges}}        {{signal(node)}}_decrthreshold,
+   {%- endif -%}
+   {%- if node.get_property('decrsaturate') %}
+    output logic {{node.parent.full_array_ranges}}        {{signal(node)}}_decrsaturate,
+   {%- endif -%}
+  {%- endif -%}
+
+ {%- endif -%}
 {%- endfor %}
 
     // Register Bus
@@ -53,19 +79,39 @@ module {{get_inst_name(top_node)}}_rf #(
 );
 
 /* verilator lint_off UNUSED */
-    // local signals for fields
+    // local output signals for fields (unless block outputs)
 {%- for node in top_node.descendants() -%}
-{%- if isinstance(node, FieldNode) -%}
-{%- if not node.is_hw_readable %}
+ {%- if isinstance(node, FieldNode) -%}
+
+  {%- if not node.is_hw_readable %}
     logic       {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node)}}_q;
-{%- endif -%}
-{%- if node.is_up_counter %}
+  {%- endif -%}
+
+  {%- if node.is_up_counter %}
+   {%- if not node.get_property('overflow') %}
     logic {{node.parent.full_array_ranges}}        {{signal(node)}}_overflow;
-{%- endif -%}
-{%- if node.is_down_counter %}
+   {%- endif -%}
+   {%- if not node.get_property('incrthreshold') %}
+    logic {{node.parent.full_array_ranges}}        {{signal(node)}}_incrthreshold;
+   {%- endif -%}
+   {%- if not node.get_property('incrsaturate') %}
+    logic {{node.parent.full_array_ranges}}        {{signal(node)}}_incrsaturate;
+   {%- endif -%}
+  {%- endif -%}
+
+  {%- if node.is_down_counter %}
+   {%- if not node.get_property('underflow') %}
     logic {{node.parent.full_array_ranges}}        {{signal(node)}}_underflow;
-{%- endif -%}
-{%- endif -%}
+   {%- endif -%}
+   {%- if not node.get_property('decrthreshold') %}
+    logic {{node.parent.full_array_ranges}}        {{signal(node)}}_decrthreshold;
+   {%- endif -%}
+   {%- if not node.get_property('decrsaturate') %}
+    logic {{node.parent.full_array_ranges}}        {{signal(node)}}_decrsaturate;
+   {%- endif -%}
+  {%- endif -%}
+
+ {%- endif -%}
 {%- endfor %}
 /* verilator lint_on UNUSED */
 

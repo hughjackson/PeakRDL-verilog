@@ -65,15 +65,21 @@ module {{get_inst_name(top_node)}}_tb #(
 {%- endif -%}
 {%- if node.is_up_counter %}
     logic {{node.parent.full_array_ranges}}        {{signal(node)}}_incr;
-    {%- if node.get_property('incrwidth') %}
+  {%- if node.get_property('incrwidth') %}
     logic {{node.parent.full_array_ranges}}[{{node.get_property('incrwidth')}}-1:0] {{signal(node)}}_incrvalue;
-    {%- endif -%}
+  {%- endif -%}
+    logic {{node.parent.full_array_ranges}}        {{signal(node)}}_overflow;
+    logic {{node.parent.full_array_ranges}}        {{signal(node)}}_incrthreshold;
+    logic {{node.parent.full_array_ranges}}        {{signal(node)}}_incrsaturate;
 {%- endif -%}
 {%- if node.is_down_counter %}
     logic {{node.parent.full_array_ranges}}        {{signal(node)}}_decr;
-    {%- if node.get_property('decrwidth') %}
+  {%- if node.get_property('decrwidth') %}
     logic {{node.parent.full_array_ranges}}[{{node.get_property('decrwidth')}}-1:0] {{signal(node)}}_decrvalue;
-    {%- endif -%}
+  {%- endif -%}
+    logic {{node.parent.full_array_ranges}}        {{signal(node)}}_underflow;
+    logic {{node.parent.full_array_ranges}}        {{signal(node)}}_decrthreshold;
+    logic {{node.parent.full_array_ranges}}        {{signal(node)}}_decrsaturate;
 {%- endif -%}
 {%- endif -%}
 {%- endfor %}
@@ -103,6 +109,7 @@ module {{get_inst_name(top_node)}}_tb #(
     ) dut (.*);
 
     initial begin
+        logic                  carry;
         logic [DATA_WIDTH-1:0] temp;
         logic [DATA_WIDTH-1:0] value;
 
@@ -175,8 +182,39 @@ module {{get_inst_name(top_node)}}_tb #(
             `HW_COUNT( {{signal(node)}}, {{full_idx(node.parent)}}, incr )
         {%- endif %}
 
+            // increment
+            {carry, temp} = temp + value;
+            
+            // saturate
+        {%- if type(node.get_property('incrsaturate')) == type(node) %}
+            `SW_READ( {{node.get_property('incrsaturate').parent.absolute_address}} )
+            value = rdata[{{node.get_property('incrsaturate').bit_range}}];
+        {%- elif node.get_property('incrsaturate') %}
+            value = {{node.get_property('incrvalue', default=2**node.width-1)}};
+        {%- endif %}
+        {%- if node.get_property('incrsaturate') %}
+            #1 `CHECK_EQUAL({{signal(node)}}_incrsaturate{{full_idx(node.parent)}}, temp >= value)
+            if (temp >= value) temp = value;
+            if (temp >= value) carry = 0; // no wrap if saturated
+        {%- endif %}
+
+            // threshold
+        {%- if type(node.get_property('incrthreshold')) == type(node) %}
+            `SW_READ( {{node.get_property('incrthreshold').parent.absolute_address}} )
+            value = rdata[{{node.get_property('incrthreshold').bit_range}}];
+        {%- elif node.get_property('incrthreshold') %}
+            value = {{node.get_property('incrvalue', default=2**node.width-1)}};
+        {%- endif %}
+        {%- if node.get_property('incrthreshold') %}
+            #1 `CHECK_EQUAL({{signal(node)}}_incrthreshold{{full_idx(node.parent)}}, temp >= value)
+        {%- endif %}
+
+            // wrap
+        {%- if node.get_property('overflow') %}
+            #1 `CHECK_EQUAL({{signal(node)}}_overflow{{full_idx(node.parent)}}, carry)
+        {%- endif %}
+
             `SW_READ( {{node.parent.absolute_address}} )
-            temp += value;
             `CHECK_EQUAL(rdata[{{node.bit_range}}], temp[{{node.width}}-1:0])
 
         end
@@ -200,8 +238,39 @@ module {{get_inst_name(top_node)}}_tb #(
             `HW_COUNT( {{signal(node)}}, {{full_idx(node.parent)}}, decr )
         {%- endif %}
 
+            // decrement
+            {carry, temp} = temp - value;
+            
+            // saturate
+        {%- if type(node.get_property('decrsaturate')) == type(node) %}
+            `SW_READ( {{node.get_property('decrsaturate').parent.absolute_address}} )
+            value = rdata[{{node.get_property('decrsaturate').bit_range}}];
+        {%- elif node.get_property('decrsaturate') %}
+            value = {{node.get_property('decrvalue', default=0)}};
+        {%- endif %}
+        {%- if node.get_property('decrsaturate') %}
+            #1 `CHECK_EQUAL({{signal(node)}}_decrsaturate{{full_idx(node.parent)}}, temp <= value)
+            if (temp <= value) temp = value;
+            if (temp >= value) carry = 0; // no wrap if saturated
+        {%- endif %}
+
+            // threshold
+        {%- if type(node.get_property('decrthreshold')) == type(node) %}
+            `SW_READ( {{node.get_property('decrthreshold').parent.absolute_address}} )
+            value = rdata[{{node.get_property('decrthreshold').bit_range}}];
+        {%- elif node.get_property('decrthreshold') %}
+            value = {{node.get_property('decrvalue', default=0)}};
+        {%- endif %}
+        {%- if node.get_property('decrthreshold') %}
+            #1 `CHECK_EQUAL({{signal(node)}}_decrthreshold{{full_idx(node.parent)}}, temp <= value)
+        {%- endif %}
+
+            // wrap
+        {%- if node.get_property('overflow') %}
+            #1 `CHECK_EQUAL({{signal(node)}}_underflow{{full_idx(node.parent)}}, carry)
+        {%- endif %}
+
             `SW_READ( {{node.parent.absolute_address}} )
-            temp -= value;
             `CHECK_EQUAL(rdata[{{node.bit_range}}], temp[{{node.width}}-1:0])
 
         end
