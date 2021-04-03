@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/hughjackson/PeakRDL-verilog.svg?branch=main)](https://travis-ci.org/hughjackson/PeakRDL-verilog)
+![build status](https://github.com/hughjackson/PeakRDL-verilog/actions/workflows/actions.yml/badge.svg)
 
 # PeakRDL-verilog
 Generate Verilog register model from compiled SystemRDL input
