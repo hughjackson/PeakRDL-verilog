@@ -181,8 +181,33 @@ module {{get_inst_name(top_node)}}_tb #(
             `HW_COUNT( {{signal(node)}}, {{full_idx(node.parent)}}, incr )
         {%- endif %}
 
-            `SW_READ( {{node.parent.absolute_address}} )
+            // increment
             temp += value;
+            
+            // saturate
+        {%- if type(node.get_property('incrsaturate')) == type(node) %}
+            `SW_READ( {{node.get_property('incrsaturate').parent.absolute_address}} )
+            value = rdata[{{node.get_property('incrsaturate').bit_range}}];
+        {%- elif node.get_property('incrsaturate') %}
+            value = {{node.get_property('incrvalue', default=2**node.width-1)}};
+        {%- endif %}
+        {%- if node.get_property('incrsaturate') %}
+            #1 `CHECK_EQUAL({{signal(node)}}_incrsaturate{{full_idx(node.parent)}}, temp >= value)
+            if (temp >= value) temp = value;
+        {%- endif %}
+
+            // threshold
+        {%- if type(node.get_property('incrthreshold')) == type(node) %}
+            `SW_READ( {{node.get_property('incrthreshold').parent.absolute_address}} )
+            value = rdata[{{node.get_property('incrthreshold').bit_range}}];
+        {%- elif node.get_property('incrthreshold') %}
+            value = {{node.get_property('incrvalue', default=2**node.width-1)}};
+        {%- endif %}
+        {%- if node.get_property('incrthreshold') %}
+            #1 `CHECK_EQUAL({{signal(node)}}_incrthreshold{{full_idx(node.parent)}}, temp >= value)
+        {%- endif %}
+
+            `SW_READ( {{node.parent.absolute_address}} )
             `CHECK_EQUAL(rdata[{{node.bit_range}}], temp[{{node.width}}-1:0])
 
         end
@@ -206,8 +231,33 @@ module {{get_inst_name(top_node)}}_tb #(
             `HW_COUNT( {{signal(node)}}, {{full_idx(node.parent)}}, decr )
         {%- endif %}
 
-            `SW_READ( {{node.parent.absolute_address}} )
+            // decrement
             temp -= value;
+            
+            // saturate
+        {%- if type(node.get_property('decrsaturate')) == type(node) %}
+            `SW_READ( {{node.get_property('decrsaturate').parent.absolute_address}} )
+            value = rdata[{{node.get_property('decrsaturate').bit_range}}];
+        {%- elif node.get_property('decrsaturate') %}
+            value = {{node.get_property('decrvalue', default=0)}};
+        {%- endif %}
+        {%- if node.get_property('decrsaturate') %}
+            #1 `CHECK_EQUAL({{signal(node)}}_decrsaturate{{full_idx(node.parent)}}, temp <= value)
+            if (temp <= value) temp = value;
+        {%- endif %}
+
+            // threshold
+        {%- if type(node.get_property('decrthreshold')) == type(node) %}
+            `SW_READ( {{node.get_property('decrthreshold').parent.absolute_address}} )
+            value = rdata[{{node.get_property('decrthreshold').bit_range}}];
+        {%- elif node.get_property('decrthreshold') %}
+            value = {{node.get_property('decrvalue', default=0)}};
+        {%- endif %}
+        {%- if node.get_property('decrthreshold') %}
+            #1 `CHECK_EQUAL({{signal(node)}}_decrthreshold{{full_idx(node.parent)}}, temp <= value)
+        {%- endif %}
+
+            `SW_READ( {{node.parent.absolute_address}} )
             `CHECK_EQUAL(rdata[{{node.bit_range}}], temp[{{node.width}}-1:0])
 
         end
