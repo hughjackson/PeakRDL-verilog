@@ -62,6 +62,7 @@ for case in testcases:
         results[case] = "Test passed"
     else:
         results[case] = "Test failed ({})".format(testcase_name+'.log')
+    print("\n\n\t{}\n\n".format(results[case]))
 
 print("================================================")
 for k,v in results.items():

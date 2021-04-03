@@ -52,6 +52,9 @@ module {{get_inst_name(top_node)}}_tb #(
 
     // Register {{get_inst_name(node).upper()}}
     logic {{node.full_array_ranges}}        {{signal(node)}}_strb;
+  {%- if node.has_intr %}
+    logic {{node.full_array_ranges}}        {{signal(node)}}_intr;
+  {%- endif -%}
 
 {%- elif isinstance(node, FieldNode) -%}
 {%- if node.is_hw_writable %}
@@ -63,6 +66,9 @@ module {{get_inst_name(top_node)}}_tb #(
     logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node)}}_q;
 
 {%- endif -%}
+  {%- if node.get_property('intr') %}
+    logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node)}}_intr;
+  {%- endif -%}
 {%- if node.is_up_counter %}
     logic {{node.parent.full_array_ranges}}        {{signal(node)}}_incr;
   {%- if node.get_property('incrwidth') %}
@@ -326,7 +332,8 @@ module {{get_inst_name(top_node)}}_tb #(
         for (int IDX = {{node.lsb}}; IDX <= {{node.msb}}; ++IDX) begin
 
             temp = '0;
-            temp[{{node.bit_range}}] = {{signal(node)}}_q{{full_idx(node.parent)}};
+            `SW_READ( {{node.parent.absolute_address}} )
+            temp[{{node.bit_range}}] = rdata[{{node.bit_range}}];
         {%- if node.get_property('onwrite') == OnWriteType.woset %}
             temp[IDX] = 1;
             value = temp;
