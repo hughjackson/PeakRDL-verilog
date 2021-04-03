@@ -1,6 +1,7 @@
 
 addrmap sw_access {
     default swmod;
+    default swacc;
 
     reg {
         default sw = rw;

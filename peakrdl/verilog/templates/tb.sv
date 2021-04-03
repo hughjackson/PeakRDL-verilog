@@ -59,6 +59,9 @@ module {{get_inst_name(top_node)}}_tb #(
   {%- if node.get_property('swmod') %}
     logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'swmod')}};
   {%- endif %}
+  {%- if node.get_property('swacc') %}
+    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'swacc')}};
+  {%- endif %}
  {%- if node.is_hw_writable %}
     logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'wr')}};
     logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node, '', 'wdata')}};

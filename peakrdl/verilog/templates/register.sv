@@ -43,11 +43,14 @@ assign {{signal(child, index, 'intr')}} = {{signal(child, index, 'q')}} && {{get
 {%- if not child.implements_storage %}
     {%- if child.is_hw_writable %}
 assign {{signal(child, index, 'q')}} = {{signal(child)}}_wdata;
-
     {%- else %}
 assign {{signal(child, index, 'q')}} = {{child.get_property('reset')}};
-
     {%- endif %}
+
+    {%- if child.get_property('swacc') %}
+assign {{signal(child, index, 'swacc')}} = {{signal(node)}}_sw_rd;
+    {%- endif -%}
+
 {%- else %}
 always_ff @ (posedge clk, negedge resetn)
     if (~resetn) begin
@@ -55,9 +58,25 @@ always_ff @ (posedge clk, negedge resetn)
         {%- if child.get_property('swmod') %}
         {{signal(child, index, 'swmod')}} <= 1'b0;
         {%- endif %}
+        {%- if child.get_property('swacc') %}
+        {{signal(child, index, 'swacc')}} <= 1'b0;
+        {%- endif %}
     end else begin
         {%- if child.get_property('swmod') %}
         {{signal(child, index, 'swmod')}} <= 1'b0;
+        {%- endif %}
+
+        {%- if child.get_property('swacc') %}
+        {{signal(child, index, 'swacc')}} <= 
+            {%- if child.is_sw_readable and child.is_sw_writable -%}
+                {{' '}}{{signal(node)}}_sw_rd | {{signal(node)}}_sw_wr;
+            {%- elif child.is_sw_readable -%}
+                {{' '}}{{signal(node)}}_sw_rd;
+            {%- elif child.is_sw_writable -%}
+                {{' '}}{{signal(node)}}_sw_wr;
+            {%- else -%}
+                {{' '}}1'b0;
+            {%- endif %}
         {%- endif %}
 
         {%- if child.get_property('singlepulse') %}

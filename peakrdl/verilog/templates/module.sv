@@ -23,6 +23,10 @@ module {{get_inst_name(top_node)}}_rf #(
     output logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'swmod')}},
   {%- endif %}
 
+  {%- if node.get_property('swacc') %}
+    output logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'swacc')}},
+  {%- endif %}
+
   {%- if node.get_property('intr') %}
     // expand interrupt per field
     output logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node, '', 'intr')}},
