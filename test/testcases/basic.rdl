@@ -1,5 +1,6 @@
 
 addrmap basic #(longint unsigned PARAM = 0x10) {
+    default swmod;
 
     reg {
         default sw = rw;

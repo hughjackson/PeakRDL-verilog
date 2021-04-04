@@ -14,62 +14,74 @@ module {{get_inst_name(top_node)}}_rf #(
  {%- if isinstance(node, RegNode) %}
 
     // Register {{get_inst_name(node).upper()}}
-    output logic {{node.full_array_ranges}}        {{signal(node)}}_strb,
-
   {%- if node.has_intr %}
-    output logic {{node.full_array_ranges}}        {{signal(node)}}_intr,
+    output logic {{node.full_array_ranges}}        {{signal(node, '', 'intr')}},
   {%- endif -%}
 
  {%- elif isinstance(node, FieldNode) -%}
+  {%- if node.get_property('swmod') %}
+    output logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'swmod')}},
+  {%- endif %}
+
+  {%- if node.get_property('swacc') %}
+    output logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'swacc')}},
+  {%- endif %}
+
+  {%- if node.get_property('swwe') == True %}
+    input  logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'swwe')}},
+  {%- elif node.get_property('swwel') == True %}
+    input  logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'swwel')}},
+  {%- endif %}
+
   {%- if node.get_property('intr') %}
     // expand interrupt per field
-    output logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node)}}_intr,
+    output logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node, '', 'intr')}},
   {%- endif -%}
 
   {%- if node.is_hw_writable %}
-    input  logic {{node.parent.full_array_ranges}}        {{signal(node)}}_wr,
-    input  logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node)}}_wdata,
+    input  logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'wr')}},
+    input  logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node, '', 'wdata')}},
 
   {%- endif -%}
 
   {%- if node.is_hw_readable %}
-    output logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node)}}_q,
+    output logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node, '', 'q')}},
 
   {%- endif -%}
 
   {%- if node.is_up_counter %}
    {%- if not node.get_property('incr') %}
-    input  logic {{node.parent.full_array_ranges}}        {{signal(node)}}_incr,
+    input  logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'incr')}},
    {%- endif -%}
    {%- if node.get_property('incrwidth') %}
-    input  logic {{node.parent.full_array_ranges}}[{{node.get_property('incrwidth')}}-1:0] {{signal(node)}}_incrvalue,
+    input  logic {{node.parent.full_array_ranges}}[{{node.get_property('incrwidth')}}-1:0] {{signal(node, '', 'incrvalue')}},
    {%- endif -%}
    {%- if node.get_property('overflow') %}
-    output logic {{node.parent.full_array_ranges}}        {{signal(node)}}_overflow,
+    output logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'overflow')}},
    {%- endif -%}
    {%- if node.get_property('incrthreshold') %}
-    output logic {{node.parent.full_array_ranges}}        {{signal(node)}}_incrthreshold,
+    output logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'incrthreshold')}},
    {%- endif -%}
    {%- if node.get_property('incrsaturate') %}
-    output logic {{node.parent.full_array_ranges}}        {{signal(node)}}_incrsaturate,
+    output logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'incrsaturate')}},
    {%- endif -%}
   {%- endif -%}
 
   {%- if node.is_down_counter %}
    {%- if not node.get_property('decr') %}
-    input  logic {{node.parent.full_array_ranges}}        {{signal(node)}}_decr,
+    input  logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'decr')}},
    {%- endif -%}
    {%- if node.get_property('decrwidth') %}
-    input  logic {{node.parent.full_array_ranges}}[{{node.get_property('decrwidth')}}-1:0] {{signal(node)}}_decrvalue,
+    input  logic {{node.parent.full_array_ranges}}[{{node.get_property('decrwidth')}}-1:0] {{signal(node, '', 'decrvalue')}},
    {%- endif -%}
    {%- if node.get_property('underflow') %}
-    output logic {{node.parent.full_array_ranges}}        {{signal(node)}}_underflow,
+    output logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'underflow')}},
    {%- endif -%}
    {%- if node.get_property('decrthreshold') %}
-    output logic {{node.parent.full_array_ranges}}        {{signal(node)}}_decrthreshold,
+    output logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'decrthreshold')}},
    {%- endif -%}
    {%- if node.get_property('decrsaturate') %}
-    output logic {{node.parent.full_array_ranges}}        {{signal(node)}}_decrsaturate,
+    output logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'decrsaturate')}},
    {%- endif -%}
   {%- endif -%}
 
@@ -93,30 +105,30 @@ module {{get_inst_name(top_node)}}_rf #(
  {%- if isinstance(node, FieldNode) -%}
 
   {%- if not node.is_hw_readable %}
-    logic       {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node)}}_q;
+    logic       {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node, '', 'q')}};
   {%- endif -%}
 
   {%- if node.is_up_counter %}
    {%- if not node.get_property('overflow') %}
-    logic {{node.parent.full_array_ranges}}        {{signal(node)}}_overflow;
+    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'overflow')}};
    {%- endif -%}
    {%- if not node.get_property('incrthreshold') %}
-    logic {{node.parent.full_array_ranges}}        {{signal(node)}}_incrthreshold;
+    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'incrthreshold')}};
    {%- endif -%}
    {%- if not node.get_property('incrsaturate') %}
-    logic {{node.parent.full_array_ranges}}        {{signal(node)}}_incrsaturate;
+    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'incrsaturate')}};
    {%- endif -%}
   {%- endif -%}
 
   {%- if node.is_down_counter %}
    {%- if not node.get_property('underflow') %}
-    logic {{node.parent.full_array_ranges}}        {{signal(node)}}_underflow;
+    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'underflow')}};
    {%- endif -%}
    {%- if not node.get_property('decrthreshold') %}
-    logic {{node.parent.full_array_ranges}}        {{signal(node)}}_decrthreshold;
+    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'decrthreshold')}};
    {%- endif -%}
    {%- if not node.get_property('decrsaturate') %}
-    logic {{node.parent.full_array_ranges}}        {{signal(node)}}_decrsaturate;
+    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'decrsaturate')}};
    {%- endif -%}
   {%- endif -%}
 
@@ -143,7 +155,7 @@ module {{get_inst_name(top_node)}}_rf #(
 
 {%- for node in top_node.descendants() -%}
 {%- if isinstance(node, RegNode) %}
-    logic {{node.full_array_ranges}}[DATA_WIDTH-1:0] {{signal(node)}}_rdata;
+    logic {{node.full_array_ranges}}[DATA_WIDTH-1:0] {{signal(node, '', 'rdata')}};
 {%- endif -%}
 {%- endfor %}
 
@@ -151,7 +163,7 @@ module {{get_inst_name(top_node)}}_rf #(
 {%- for node in top_node.descendants() if isinstance(node, RegNode) %}
     {%- set outer_loop = loop %}
     {%- for idx in node.full_array_indexes %}
-                   {{signal(node)}}_rdata{{idx}}{{ " | " if not (outer_loop.last and loop.last)else ";" }}
+                   {{signal(node, '', 'rdata')}}{{idx}}{{ " | " if not (outer_loop.last and loop.last)else ";" }}
     {%- endfor %}
 {%- endfor %}
 
