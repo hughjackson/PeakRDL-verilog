@@ -62,6 +62,11 @@ module {{get_inst_name(top_node)}}_tb #(
   {%- if node.get_property('swacc') %}
     logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'swacc')}};
   {%- endif %}
+  {%- if node.get_property('swwe') == True %}
+    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'swwe')}};
+  {%- elif node.get_property('swwel') == True %}
+    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'swwel')}};
+  {%- endif %}
  {%- if node.is_hw_writable %}
     logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'wr')}};
     logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node, '', 'wdata')}};
@@ -127,6 +132,11 @@ module {{get_inst_name(top_node)}}_tb #(
         // init all hw inputs
 {%- for node in top_node.descendants() -%}
 {%- if isinstance(node, FieldNode) %}
+{%- if node.get_property('swwe') == True %}
+    {{signal(node, '', 'swwe')}} = '1;
+{%- elif node.get_property('swwel') == True %}
+    {{signal(node, '', 'swwel')}} = '0;
+{%- endif %}
 {%- if node.is_hw_writable %}
         {{signal(node, '', 'wr')}} <= '0;
         {{signal(node, '', 'wdata')}} <= '0;

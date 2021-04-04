@@ -27,6 +27,12 @@ module {{get_inst_name(top_node)}}_rf #(
     output logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'swacc')}},
   {%- endif %}
 
+  {%- if node.get_property('swwe') == True %}
+    input  logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'swwe')}},
+  {%- elif node.get_property('swwel') == True %}
+    input  logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'swwel')}},
+  {%- endif %}
+
   {%- if node.get_property('intr') %}
     // expand interrupt per field
     output logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node, '', 'intr')}},

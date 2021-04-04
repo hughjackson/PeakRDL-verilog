@@ -20,4 +20,18 @@ addrmap sw_access {
         field {singlepulse; fieldwidth=1;} single=0;
     } onreadwrite;
 
+    reg {
+        default sw = rw;
+        field { swwe;} swwe_true;
+        field { swwel;} swwel_true;
+        field { } swwe_ref;
+        field { } swwel_ref;
+        field { } we;
+        field { } wel;
+
+        //swwe_ref->swwe = we;
+        swwel_ref->swwel = wel;
+    } swwe;
+
+
 };

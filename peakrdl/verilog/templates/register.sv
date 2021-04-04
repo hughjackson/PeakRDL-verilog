@@ -107,7 +107,14 @@ always_ff @ (posedge clk, negedge resetn)
 
         {%- if child.is_sw_writable %}
         // Software write
-        if ({{signal(node)}}_sw_wr) begin
+        if ({{signal(node)}}_sw_wr
+          {%- if child.get_property('swwe') -%}
+            {{' '}}&& {{get_ref_or_input(child, index, 'swwe')}}
+          {%- elif child.get_property('swwel') -%}
+            {{' '}}&& !{{get_ref_or_input(child, index, 'swwel')}}
+          {%- endif -%}
+            ) begin
+
 
         {%- if child.get_property('swmod') %}
             {{signal(child, index, 'swmod')}} <= 1'b1;

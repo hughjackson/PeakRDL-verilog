@@ -4,7 +4,7 @@ import itertools
 import jinja2 as jj
 from systemrdl.node import RootNode, Node, RegNode, AddrmapNode, RegfileNode
 from systemrdl.node import FieldNode, MemNode, AddressableNode
-from systemrdl.rdltypes import AccessType, OnReadType, OnWriteType
+from systemrdl.rdltypes import AccessType, OnReadType, OnWriteType, PropertyReference
 #from systemrdl import RDLWalker
 
 class VerilogExporter:
@@ -139,6 +139,7 @@ class VerilogExporter:
                 'AddressableNode': AddressableNode,
                 'OnWriteType': OnWriteType,
                 'OnReadType': OnReadType,
+                'PropertyReference': PropertyReference,
                 'isinstance': isinstance,
                 'signal': self._get_signal_name,
                 'full_idx': self._full_idx,
@@ -154,6 +155,7 @@ class VerilogExporter:
                 'get_counter_value': self._get_counter_value,
                 'get_intr_enable': self._get_intr_enable,
                 'get_counter_enable': self._get_counter_enable,
+                'get_ref_or_input': self._get_ref_or_input,
             }
 
             context.update(self.user_template_context)
@@ -322,13 +324,45 @@ class VerilogExporter:
         Returns the value or SV variable name for reference
         """
         enable = node.get_property(prop)
+        # enable can be a property reference, node or None
 
         if not enable:
             return self._get_signal_name(node, index, prop)
         ref = enable.node
-        ref_prop = type(enable).__name__.split('_')[1]
+        ref_prop = enable.name
 
         return self._get_signal_name(ref, index, ref_prop)
+
+
+    def _get_ref_or_input(self, node, index, prop, default=0, width=1) -> str:
+        """
+        Returns the reference or input name
+        """
+        val = node.get_property(prop)
+
+        if isinstance(val, FieldNode):
+            return self._get_signal_name(val, index, 'q')           # reference to field
+        elif isinstance(val, PropertyReference):
+            return self._get_signal_name(val.node, index, val.name) # reference to field property
+        elif val == True:
+            return self._get_signal_name(node, index, prop)         # hw input signal
+        else:
+            return "{}'d{}".format(width, default)                  # default value
+
+
+    def _get_ref_or_value(self, node, index, prop, default=0, width=None) -> str:
+        """
+        Returns the value or SV variable name for reference
+        """
+        val = node.get_property(prop)
+        width = width or node.width
+
+        if isinstance(node, FieldNode):
+            return self._get_signal_name(val, index, 'q')       # reference to field
+        elif isinstance(val, int):
+            return "{}'d{}".format(width, val)
+        else:
+            return "{}'d{}".format(width, default)
 
 
     def _get_threshold_value(self, node, index, prop) -> str:
@@ -352,8 +386,10 @@ class VerilogExporter:
         Returns the value or SV variable name for reference
         """
         val = node.get_property(prop+'saturate')
+        # val can be bool, value or reference
+        # True implies static value
 
-        if type(val) == bool:
+        if val == True:
             return 2**node.width-1 # default vlaue
         if type(val) == int:
             return val
