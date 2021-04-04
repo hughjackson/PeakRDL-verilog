@@ -37,7 +37,13 @@ assign {{signal(node, index, 'rdata')}} = {{signal(node)}}_sw_rd ? {{signal(node
 // Field: {{child.get_rel_path(node)}} 
 
 {%- if child.get_property('intr') %}
-assign {{signal(child, index, 'intr')}} = {{signal(child, index, 'q')}} && {{get_intr_enable(child, index)}};
+assign {{signal(child, index, 'intr')}} = {{signal(child, index, 'q')}}
+    {%- if child.get_property('enable') -%}
+        {{' '}}&& {{get_prop_value(child, index, 'enable')}}
+    {%- elif child.get_property('mask') -%}
+        {{' '}}&& ~{{get_prop_value(child, index, 'mask')}}
+    {%- endif -%}
+    ;
 {%- endif %}
 
 {%- if not child.implements_storage %}
@@ -109,9 +115,9 @@ always_ff @ (posedge clk, negedge resetn)
         // Software write
         if ({{signal(node)}}_sw_wr
           {%- if child.get_property('swwe') -%}
-            {{' '}}&& {{get_ref_or_input(child, index, 'swwe')}}
+            {{' '}}&& {{get_prop_value(child, index, 'swwe')}}
           {%- elif child.get_property('swwel') -%}
-            {{' '}}&& !{{get_ref_or_input(child, index, 'swwel')}}
+            {{' '}}&& !{{get_prop_value(child, index, 'swwel')}}
           {%- endif -%}
             ) begin
 
@@ -161,7 +167,7 @@ always_ff @ (posedge clk, negedge resetn)
         {%- if child.is_up_counter %}
         // Counter increment
         {{signal(child, index, 'overflow')}} <= 1'b0;
-        if ({{get_counter_enable(child, index, 'incr')}}) begin
+        if ({{get_prop_value(child, index, 'incr', hw_on_none=True)}}) begin
             logic [{{child.msb+1}}:{{child.lsb}}] next;
             /* verilator lint_off WIDTH */
             next = {{signal(child, index, 'q')}} + {{get_counter_value(child, index, 'incr')}};
@@ -175,17 +181,24 @@ always_ff @ (posedge clk, negedge resetn)
             {{signal(child, index, 'overflow')}} <= 1'b0;
             {{signal(child, index, 'incrsaturate')}} <= 1'b0;
             if (next[{{child.msb+1}}] ||
-                (next[{{child.bit_range}}] >= {{get_saturate_value(child, index, 'incr')}})) begin
-                {{signal(child, index, 'q')}} <= {{get_saturate_value(child, index, 'incr')}};
+                (next[{{child.bit_range}}] >= {{get_prop_value(child, index, 'incrsaturate',
+                                                               hw_on_true=False, default=-1,
+                                                               width=child.width)}})) begin
+                {{signal(child, index, 'q')}} <= {{get_prop_value(child, index, 'incrsaturate',
+                                                               hw_on_true=False, default=-1,
+                                                               width=child.width)}};
                 {{signal(child, index, 'incrsaturate')}} <= 1'b1;
             end
             {%- endif %}
 
             {%- if child.get_property('incrthreshold') %}
+
             // threshold
             {{signal(child, index, 'incrthreshold')}} <= 1'b0;
             if (next[{{child.msb+1}}] ||
-                (next[{{child.bit_range}}] >= {{get_threshold_value(child, index, 'incr')}})) begin
+                (next[{{child.bit_range}}] >= {{get_prop_value(child, index, 'incrthreshold',
+                                                               hw_on_true=False, default=-1,
+                                                               width=child.width)}})) begin
                 {{signal(child, index, 'incrthreshold')}} <= 1'b1;
             end
             {%- endif %}
@@ -195,7 +208,7 @@ always_ff @ (posedge clk, negedge resetn)
         {%- if child.is_down_counter %}
         // Counter decrement
         {{signal(child, index, 'underflow')}} <= 1'b0;
-        if ({{get_counter_enable(child, index, 'decr')}}) begin
+        if ({{get_prop_value(child, index, 'decr', hw_on_none=True)}}) begin
             logic [{{child.msb+1}}:{{child.lsb}}] next;
             /* verilator lint_off WIDTH */
             next = {{signal(child, index, 'q')}} - {{get_counter_value(child, index, 'decr')}};
@@ -210,8 +223,12 @@ always_ff @ (posedge clk, negedge resetn)
             {{signal(child, index, 'underflow')}} <= 1'b0;
             {{signal(child, index, 'decrsaturate')}} <= 1'b0;
             if (next[{{child.msb+1}}] ||
-                (next[{{child.bit_range}}] <= {{get_saturate_value(child, index, 'decr')}})) begin
-                {{signal(child, index, 'q')}} <= {{get_saturate_value(child, index, 'decr')}};
+                (next[{{child.bit_range}}] <= {{get_prop_value(child, index, 'decrsaturate',
+                                                               hw_on_true=False, default=0,
+                                                               width=child.width)}})) begin
+                {{signal(child, index, 'q')}} <= {{get_prop_value(child, index, 'decrsaturate',
+                                                               hw_on_true=False, default=0,
+                                                               width=child.width)}};
                 {{signal(child, index, 'decrsaturate')}} <= 1'b1;
             end
             {%- endif %}
@@ -221,7 +238,9 @@ always_ff @ (posedge clk, negedge resetn)
             // threshold
             {{signal(child, index, 'decrthreshold')}} <= 1'b0;
             if (next[{{child.msb+1}}] ||
-                (next[{{child.bit_range}}] <= {{get_threshold_value(child, index, 'decr')}})) begin
+                (next[{{child.bit_range}}] <= {{get_prop_value(child, index, 'decrthreshold',
+                                                               hw_on_true=False, default=0,
+                                                               width=child.width)}})) begin
                 {{signal(child, index, 'decrthreshold')}} <= 1'b1;
             end
             {%- endif %}

@@ -150,12 +150,8 @@ class VerilogExporter:
                 'get_mem_access': self._get_mem_access,
                 'roundup_to': self._roundup_to,
                 'roundup_pow2': self._roundup_pow2,
-                'get_saturate_value': self._get_saturate_value,
-                'get_threshold_value': self._get_threshold_value,
+                'get_prop_value': self._get_prop_value,
                 'get_counter_value': self._get_counter_value,
-                'get_intr_enable': self._get_intr_enable,
-                'get_counter_enable': self._get_counter_enable,
-                'get_ref_or_input': self._get_ref_or_input,
             }
 
             context.update(self.user_template_context)
@@ -319,84 +315,39 @@ class VerilogExporter:
         return 1<<(x-1).bit_length()
 
 
-    def _get_counter_enable(self, node, index, prop) -> str:
+    # get property value where:
+    #   true => hw input        (e.g. swwe, swwel)
+    #   true => default value   (e.g. threshold)
+    #   None => hw input        (e.g. incr, decr)
+    #   None => default value   (e.g. incrvalue)
+    def _get_prop_value(self, node, index, prop, hw_on_true=True, hw_on_none=False, default=0, width=1) -> str:
         """
-        Returns the value or SV variable name for reference
-        """
-        enable = node.get_property(prop)
-        # enable can be a property reference, node or None
-
-        if not enable:
-            return self._get_signal_name(node, index, prop)
-        ref = enable.node
-        ref_prop = enable.name
-
-        return self._get_signal_name(ref, index, ref_prop)
-
-
-    def _get_ref_or_input(self, node, index, prop, default=0, width=1) -> str:
-        """
-        Returns the reference or input name
+        Converts the property value on the node to a SV value
+        or signal for assignment and comparison
         """
         val = node.get_property(prop)
+
+        # refactor negative defaults
+        if default < 0:
+            default = 2**width + default
+
+        # DEUBUG: print(self._get_signal_name(node, '',''), prop, type(val), val, default)
 
         if isinstance(val, FieldNode):
             return self._get_signal_name(val, index, 'q')           # reference to field
         elif isinstance(val, PropertyReference):
             return self._get_signal_name(val.node, index, val.name) # reference to field property
-        elif val == True:
+        if type(val) == int:
+            return "{}'d{}".format(width, val)                      # specified value
+        elif ((val is True and hw_on_true) or
+              (val is None and hw_on_none)):
             return self._get_signal_name(node, index, prop)         # hw input signal
-        else:
+        elif val is True or val is None:
             return "{}'d{}".format(width, default)                  # default value
-
-
-    def _get_ref_or_value(self, node, index, prop, default=0, width=None) -> str:
-        """
-        Returns the value or SV variable name for reference
-        """
-        val = node.get_property(prop)
-        width = width or node.width
-
-        if isinstance(node, FieldNode):
-            return self._get_signal_name(val, index, 'q')       # reference to field
-        elif isinstance(val, int):
-            return "{}'d{}".format(width, val)
         else:
-            return "{}'d{}".format(width, default)
-
-
-    def _get_threshold_value(self, node, index, prop) -> str:
-        """
-        Returns the value or SV variable name for reference
-        """
-        val = node.get_property(prop+'threshold')
-
-        if type(val) == bool:
-            return 2**node.width-1 # default vlaue
-        if type(val) == int:
-            return val
-        if val.parent != node.parent:
-            print("ERROR: incrsturate reference only supported for fields in same reg")
-
-        return self._get_signal_name(val, index, 'q')
-
-
-    def _get_saturate_value(self, node, index, prop) -> str:
-        """
-        Returns the value or SV variable name for reference
-        """
-        val = node.get_property(prop+'saturate')
-        # val can be bool, value or reference
-        # True implies static value
-
-        if val == True:
-            return 2**node.width-1 # default vlaue
-        if type(val) == int:
-            return val
-        if val.parent != node.parent:
-            print("ERROR: incrsturate reference only supported for fields in same reg")
-
-        return self._get_signal_name(val, index, 'q')
+            err = "ERROR: property {} of type {} not recognised".format(prop, type(prop))
+            print(err)
+            return err
 
 
     def _get_counter_value(self, node, index, prop) -> str:
@@ -416,29 +367,6 @@ class VerilogExporter:
             print("ERROR: incrvalue reference only supported for fields in same reg")
 
         return self._get_signal_name(val, index, 'q')
-
-
-    def _get_intr_enable(self, node, index) -> str:
-        """
-        Returns the value or SV variable name for reference
-        """
-        enable = node.get_property('enable')
-        mask = node.get_property('mask')
-
-        if not enable and not mask:
-            return "{%0d{1'b1}}" % node.width
-        elif type(enable) == int:
-            return "{:0d}'h{}".format(node.width, enable)
-        elif enable:
-            ref = enable
-            mod = ''
-        elif type(mask) == int:
-            return "~{:0d}'h{}".format(node.width, mask)
-        elif mask:
-            ref = mask
-            mod = '~'
-
-        return self._get_signal_name(ref, index, 'q')
 
 
     def is_up_counter(self, node) -> bool:
