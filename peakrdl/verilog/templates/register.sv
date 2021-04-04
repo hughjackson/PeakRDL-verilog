@@ -50,6 +50,9 @@ assign {{signal(child, index, 'q')}} = {{child.get_property('reset')}};
     {%- if child.get_property('swacc') %}
 assign {{signal(child, index, 'swacc')}} = {{signal(node)}}_sw_rd;
     {%- endif -%}
+    {%- if child.get_property('swmod') %}
+assign {{signal(child, index, 'swmod')}} = 1'b0; // WARNING: this could be an input error
+    {%- endif %}
 
 {%- else %}
 always_ff @ (posedge clk, negedge resetn)
