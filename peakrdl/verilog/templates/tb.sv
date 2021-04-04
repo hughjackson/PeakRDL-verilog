@@ -67,6 +67,12 @@ module {{get_inst_name(top_node)}}_tb #(
   {%- elif node.get_property('swwel') == True %}
     logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'swwel')}};
   {%- endif %}
+  {%- if node.get_property('hwset') == True %}
+    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'hwset')}},
+  {%- endif %}
+  {%- if node.get_property('hwclr') == True %}
+    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'hwclr')}},
+  {%- endif %}
  {%- if node.is_hw_writable %}
     logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'wr')}};
     logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node, '', 'wdata')}};
@@ -136,6 +142,12 @@ module {{get_inst_name(top_node)}}_tb #(
     {{signal(node, '', 'swwe')}} = '1;
 {%- elif node.get_property('swwel') == True %}
     {{signal(node, '', 'swwel')}} = '0;
+{%- endif %}
+{%- if node.get_property('hwset') == True %}
+    {{signal(node, '', 'hwset')}} = '0;
+{%- endif %}
+{%- if node.get_property('hwclr') == True %}
+    {{signal(node, '', 'hwclr')}} = '0;
 {%- endif %}
 {%- if node.is_hw_writable %}
         {{signal(node, '', 'wr')}} <= '0;

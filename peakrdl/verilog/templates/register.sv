@@ -157,6 +157,20 @@ always_ff @ (posedge clk, negedge resetn)
         end
         {%- endif -%}
 
+        {%- if child.get_property('hwset') %}
+        // Hardware Set
+        if ({{get_prop_value(child, index, 'hwset')}}) begin
+            {{signal(child, index, 'q')}} <= { {{child.width}} {1'b1} };
+        end
+        {%- endif %}
+
+        {%- if child.get_property('hwclr') %}
+        // Hardware Clear
+        if ({{get_prop_value(child, index, 'hwclr')}}) begin
+            {{signal(child, index, 'q')}} <= { {{child.width}} {1'b0} };
+        end
+        {%- endif %}
+
         {%- if child.is_hw_writable %}
         // Hardware Write
         if ({{signal(child, index, 'wr')}}) begin
