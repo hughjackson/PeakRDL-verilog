@@ -4,7 +4,7 @@ import itertools
 import jinja2 as jj
 from systemrdl.node import RootNode, Node, RegNode, AddrmapNode, RegfileNode
 from systemrdl.node import FieldNode, MemNode, AddressableNode
-from systemrdl.rdltypes import AccessType, OnReadType, OnWriteType, PropertyReference
+from systemrdl.rdltypes import AccessType, OnReadType, OnWriteType, InterruptType, PropertyReference
 #from systemrdl import RDLWalker
 
 class VerilogExporter:
@@ -57,6 +57,7 @@ class VerilogExporter:
         RegNode.add_derived_property(self.full_array_ranges)
         RegNode.add_derived_property(self.full_array_indexes)
         RegNode.add_derived_property(self.has_intr)
+        RegNode.add_derived_property(self.has_halt)
         FieldNode.add_derived_property(self.is_hw_writable)
         FieldNode.add_derived_property(self.is_hw_readable)
         FieldNode.add_derived_property(self.is_up_counter)
@@ -66,6 +67,7 @@ class VerilogExporter:
         FieldNode.add_derived_property(self.full_array_ranges)
         FieldNode.add_derived_property(self.full_array_dimensions)
         FieldNode.add_derived_property(self.has_we)
+        FieldNode.add_derived_property(self.has_halt)
         RegfileNode.add_derived_property(self.full_array_dimensions)
         RegfileNode.add_derived_property(self.full_array_ranges)
 
@@ -142,6 +144,7 @@ class VerilogExporter:
                 'AddressableNode': AddressableNode,
                 'OnWriteType': OnWriteType,
                 'OnReadType': OnReadType,
+                'InterruptType': InterruptType,
                 'PropertyReference': PropertyReference,
                 'isinstance': isinstance,
                 'signal': self._get_signal_name,
@@ -485,6 +488,18 @@ class VerilogExporter:
         return False
 
 
+    def has_halt(self, node) -> bool:
+        """
+        Register has halt fields
+        """
+        if type(node) == FieldNode:
+            return node.get_property('haltmask') or node.get_property('haltenable')
+        for f in node.fields():
+            if f.has_halt:
+                return True
+        return False
+
+
     def has_we(self, node: FieldNode) -> bool:
         """
         Field has we input
@@ -500,4 +515,4 @@ class VerilogExporter:
         return ((node.get_property('we') is True) or    # explicit
                 (node.implements_storage and
                  node.is_hw_writable and
-                 node.get_property('sticky') is not True))  # storage without sticky unlikely to not want we
+                 not node.get_property('intr')))        # interrupt unlikely to not want we

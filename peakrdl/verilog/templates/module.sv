@@ -17,6 +17,9 @@ module {{get_inst_name(top_node)}}_rf #(
   {%- if node.has_intr %}
     output logic {{node.full_array_ranges}}        {{signal(node, '', 'intr')}}, //! Combined interrupt line for {{get_inst_name(node).upper()}}
   {%- endif -%}
+  {%- if node.has_halt %}
+    output logic {{node.full_array_ranges}}        {{signal(node, '', 'halt')}}, //! Combined halt line for {{get_inst_name(node).upper()}}
+  {%- endif -%}
 
  {%- elif isinstance(node, FieldNode) -%}
   {%- if node.get_property('swmod') %}
@@ -34,8 +37,10 @@ module {{get_inst_name(top_node)}}_rf #(
   {%- endif %}
 
   {%- if node.get_property('intr') %}
-    // expand interrupt per field, leave open if not wanted
     output logic {{node.parent.full_array_ranges}}[{{node.bit_range_zero}}] {{signal(node, '', 'intr')}}, //! Individual interrupt line for {{get_inst_name(node).upper()}}
+  {%- endif -%}
+  {%- if node.has_halt %}
+    output logic {{node.parent.full_array_ranges}}[{{node.bit_range_zero}}] {{signal(node, '', 'halt')}}, //! Individual halt line for {{get_inst_name(node).upper()}}
   {%- endif -%}
 
   {%- if node.get_property('hwset') == True %}
@@ -128,7 +133,8 @@ module {{get_inst_name(top_node)}}_rf #(
 
   {%- if not node.is_hw_readable %}
     logic       {{node.parent.full_array_ranges}}[{{node.bit_range_zero}}] {{signal(node, '', 'q')}};
-  {%- endif -%}
+  {%- endif %}
+    logic       {{node.parent.full_array_ranges}}[{{node.bit_range_zero}}] {{signal(node, '', 'next')}};
 
   {%- if not node.get_property('anded') %}
     logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'anded')}};

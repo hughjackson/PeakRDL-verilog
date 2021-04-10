@@ -22,10 +22,16 @@ always_comb begin
 end
 
 {%- if node.has_intr %}
-
 // Combined interrupt
 assign {{signal(node, '', 'intr')}} = {% for child in node.fields() if child.get_property('intr') -%} 
                                         ( | {{signal(child, index, 'intr')}} ){{ " | " if not loop.last else ";" }}
+                                      {%- endfor -%}
+{%- endif %}
+
+{%- if node.has_halt %}
+// Combined halt
+assign {{signal(node, '', 'halt')}} = {% for child in node.fields() if child.has_halt -%} 
+                                        ( | {{signal(child, index, 'halt')}} ){{ " | " if not loop.last else ";" }}
                                       {%- endfor -%}
 {%- endif %}
 
@@ -34,9 +40,26 @@ assign {{signal(node, index, 'rdata')}} = {{signal(node)}}_sw_rd ? {{signal(node
 
 {%- for child in node.fields() %}
 
+// ------------------------------------------------------------
 // Field: {{child.get_rel_path(node)}} 
+{%- if child.get_property('intr') %} (interrupt) {%- endif %}
+{%- if child.get_property('counter') %} (counter) {%- endif %}
+{%- if not child.implements_storage %} (wire) {%- endif %}
+// ------------------------------------------------------------
+assign {{signal(child, index, 'anded')}} = & {{signal(child, index, 'q')}};
+assign {{signal(child, index, 'ored')}}  = | {{signal(child, index, 'q')}};
+assign {{signal(child, index, 'xored')}} = ^ {{signal(child, index, 'q')}};
 
 {%- if child.get_property('intr') %}
+{%- if child.get_property('intr type') != InterruptType.level %}
+logic [{{child.bit_range_zero}}] {{signal(child, '', 'wdata')}}_d;
+//! interrupt detection state
+always_ff @ (posedge clk) begin
+    {{signal(child, '', 'wdata')}}_d <= {{signal(child, index, 'wdata')}};
+end
+{%- endif %}
+
+// qualified interrupt
 assign {{signal(child, index, 'intr')}} = {{signal(child, index, 'q')}}
     {%- if child.get_property('enable') -%}
         {{' '}}&& {{get_prop_value(child, index, 'enable')}}
@@ -46,13 +69,33 @@ assign {{signal(child, index, 'intr')}} = {{signal(child, index, 'q')}}
     ;
 {%- endif %}
 
-assign {{signal(child, index, 'anded')}} = & {{signal(child, index, 'q')}};
-assign {{signal(child, index, 'ored')}}  = | {{signal(child, index, 'q')}};
-assign {{signal(child, index, 'xored')}} = ^ {{signal(child, index, 'q')}};
+{%- if child.has_halt %}
+// qualified halt
+assign {{signal(child, index, 'halt')}} = {{signal(child, index, 'q')}}
+    {%- if child.get_property('haltenable') -%}
+        {{' '}}&& {{get_prop_value(child, index, 'haltenable')}}
+    {%- elif child.get_property('haltmask') -%}
+        {{' '}}&& ~{{get_prop_value(child, index, 'haltmask')}}
+    {%- endif -%}
+    ;
+{%- endif %}
+
+// next hardware value
+{%- if child.get_property('intr') and child.get_property('intr type') == InterruptType.level %}
+assign {{signal(child, index, 'next')}} = {{signal(child, index, 'wdata')}}; // level
+{%- elif child.get_property('intr') and child.get_property('intr type') == InterruptType.posedge %}
+assign {{signal(child, index, 'next')}} = {{signal(child, index, 'wdata')}} & ~{{signal(child, '', 'wdata')}}_d; // posedge
+{%- elif child.get_property('intr') and child.get_property('intr type') == InterruptType.negedge %}
+assign {{signal(child, index, 'next')}} = ~{{signal(child, index, 'wdata')}} & {{signal(child, '', 'wdata')}}_d; // negedge
+{%- elif child.get_property('intr') and child.get_property('intr type') == InterruptType.bothedge %}
+assign {{signal(child, index, 'next')}} = {{signal(child, index, 'wdata')}} ^ {{signal(child, '', 'wdata')}}_d; // bothedge
+{%- elif child.is_hw_writable %}
+assign {{signal(child, index, 'next')}} = {{signal(child, index, 'wdata')}};
+{%- endif %}
 
 {%- if not child.implements_storage %}
     {%- if child.is_hw_writable %}
-assign {{signal(child, index, 'q')}} = {{signal(child)}}_wdata;
+assign {{signal(child, index, 'q')}} = {{signal(child, index, 'next')}};
     {%- else %}
 assign {{signal(child, index, 'q')}} = {{child.get_property('reset')}};
     {%- endif %}
@@ -65,6 +108,8 @@ assign {{signal(child, index, 'swmod')}} = 1'b0; // WARNING: this could be an in
     {%- endif %}
 
 {%- else %}
+
+//! main storage
 always_ff @ (posedge clk, negedge resetn)
 if (~resetn) begin
     {{signal(child, index, 'q')}} <= {{child.get_property('reset', default=0)}};
@@ -186,7 +231,15 @@ end else begin
     {%- else %}
     begin // no write enable defined
     {%- endif %}
-        {{signal(child, index, 'q')}} <= {{signal(child, index, 'wdata')}};
+      {%- if child.get_property('sticky') %}
+        // only update if no bits are set
+        if (! |{{signal(child, index, 'q')}}) {{signal(child, index, 'q')}} <= {{signal(child, index, 'next')}};
+      {%- elif child.get_property('stickybit') %}
+        // field is stickybit, set but don't clear bits
+        {{signal(child, index, 'q')}} <= {{signal(child, index, 'q')}} | {{signal(child, index, 'next')}};
+      {%- else %}
+        {{signal(child, index, 'q')}} <= {{signal(child, index, 'next')}};
+      {%- endif %}
     end
     {%- endif %}
 
