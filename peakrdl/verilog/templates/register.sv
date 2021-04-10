@@ -42,6 +42,9 @@ assign {{signal(node, index, 'rdata')}} = {{signal(node)}}_sw_rd ? {{signal(node
 
 // ------------------------------------------------------------
 // Field: {{child.get_rel_path(node)}} 
+{%- if child.get_property('intr') %} (interrupt) {%- endif %}
+{%- if child.get_property('counter') %} (counter) {%- endif %}
+{%- if not child.implements_storage %} (wire) {%- endif %}
 // ------------------------------------------------------------
 assign {{signal(child, index, 'anded')}} = & {{signal(child, index, 'q')}};
 assign {{signal(child, index, 'ored')}}  = | {{signal(child, index, 'q')}};

@@ -515,4 +515,4 @@ class VerilogExporter:
         return ((node.get_property('we') is True) or    # explicit
                 (node.implements_storage and
                  node.is_hw_writable and
-                 node.get_property('stickybit') is not True))  # storage without sticky unlikely to not want we
+                 not node.get_property('intr')))        # interrupt unlikely to not want we

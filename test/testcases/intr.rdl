@@ -4,12 +4,36 @@ addrmap intr #(longint unsigned PARAM = 0x10) {
     reg {
         default sw = rw;
         default hw = rw;
-        default posedge intr;
+        default intr;
         field {} i0;
         field {} i1;
-        field {} hmask;
+        field {intr=false;} hmask;
         field {} h0;
         h0->haltmask = hmask;
         field {sticky; intr=false;} reason[31:24];
-    } basic;
+    } levelint;
+    reg {
+        default sw = rw;
+        default hw = rw;
+        default posedge intr;
+        field {} i0;
+    } posint;
+    reg {
+        default sw = rw;
+        default hw = rw;
+        default negedge intr;
+        field {} i0;
+    } negint;
+    reg {
+        default sw = rw;
+        default hw = rw;
+        default bothedge intr;
+        field {} i0;
+    } bothint;
+    reg {
+        default sw = rw;
+        default hw = rw;
+        default nonsticky intr;
+        field {} i0;
+    } nsint;
 };
