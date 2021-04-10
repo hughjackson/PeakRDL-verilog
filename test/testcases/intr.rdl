@@ -1,0 +1,12 @@
+addrmap intr #(longint unsigned PARAM = 0x10) {
+    default swmod;
+
+    reg {
+        default sw = rw;
+        default hw = rw;
+        default intr;
+        field {} i0;
+        field {} i1;
+        field {sticky; intr=false;} reason[31:24];
+    } basic;
+};

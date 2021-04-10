@@ -34,7 +34,9 @@ assign {{signal(node, index, 'rdata')}} = {{signal(node)}}_sw_rd ? {{signal(node
 
 {%- for child in node.fields() %}
 
+// ------------------------------------------------------------
 // Field: {{child.get_rel_path(node)}} 
+// ------------------------------------------------------------
 
 {%- if child.get_property('intr') %}
 assign {{signal(child, index, 'intr')}} = {{signal(child, index, 'q')}}
@@ -186,7 +188,15 @@ end else begin
     {%- else %}
     begin // no write enable defined
     {%- endif %}
+      {%- if child.get_property('sticky') %}
+        // only update if no bits are set
+        if (! |{{signal(child, index, 'q')}}) {{signal(child, index, 'q')}} <= {{signal(child, index, 'wdata')}};
+      {%- elif child.get_property('stickybit') %}
+        // field is stickybit, set but don't clear bits
+        {{signal(child, index, 'q')}} <= {{signal(child, index, 'q')}} | {{signal(child, index, 'wdata')}};
+      {%- else %}
         {{signal(child, index, 'q')}} <= {{signal(child, index, 'wdata')}};
+      {%- endif %}
     end
     {%- endif %}
 
