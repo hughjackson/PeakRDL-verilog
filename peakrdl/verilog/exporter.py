@@ -23,6 +23,7 @@ class VerilogExporter:
         user_template_dir = kwargs.pop("user_template_dir", None)
         self.user_template_context = kwargs.pop("user_template_context", dict())
         self.signal_overrides = {}
+        self.strict = False # strict RDL rules rather than helpful impliciti behaviour
 
         # Check for stray kwargs
         if kwargs:
@@ -63,6 +64,7 @@ class VerilogExporter:
         FieldNode.add_derived_property(self.bit_range)
         FieldNode.add_derived_property(self.full_array_ranges)
         FieldNode.add_derived_property(self.full_array_dimensions)
+        FieldNode.add_derived_property(self.has_we)
         RegfileNode.add_derived_property(self.full_array_dimensions)
         RegfileNode.add_derived_property(self.full_array_ranges)
 
@@ -345,7 +347,7 @@ class VerilogExporter:
         elif val is True or val is None:
             return "{}'d{}".format(width, default)                  # default value
         else:
-            err = "ERROR: property {} of type {} not recognised".format(prop, type(prop))
+            err = "ERROR: property {} of type {} not recognised".format(prop, type(val))
             print(err)
             return err
 
@@ -473,3 +475,21 @@ class VerilogExporter:
             if f.get_property('intr'):
                 return True
         return False
+
+
+    def has_we(self, node : FieldNode) -> bool:
+        """
+        Field has we input
+        """
+        if self.strict:
+            # strict RDL says no we unless specified
+            return node.get_property('we') == True
+
+        if node.get_property('wel') != False:
+            # can't have we and wel
+            return False 
+
+        return ((node.get_property('we') == True) or    # explicit
+                (node.implements_storage and
+                 node.is_hw_writable and
+                 node.get_property('sticky') != True))  # storage without sticky unlikely to not want we

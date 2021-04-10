@@ -34,7 +34,7 @@ module {{get_inst_name(top_node)}}_rf #(
   {%- endif %}
 
   {%- if node.get_property('intr') %}
-    // expand interrupt per field
+    // expand interrupt per field, leave open if not wanted
     output logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node, '', 'intr')}}, //! Individual interrupt line for {{get_inst_name(node).upper()}}
   {%- endif -%}
 
@@ -46,10 +46,14 @@ module {{get_inst_name(top_node)}}_rf #(
     input  logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'hwclr')}},          //! Set all bits low
   {%- endif %}
 
-  {%- if node.is_hw_writable %}
-    input  logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'wr')}},             //! Control HW write (active high)
-    input  logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node, '', 'wdata')}},          //! HW write data
+  {%- if node.get_property('wel') == True %}
+    input  logic  {{node.parent.full_array_ranges}}       {{signal(node, '', 'wel')}},            //! Control HW write (active low)
+  {%- elif node.has_we %}
+    input  logic  {{node.parent.full_array_ranges}}       {{signal(node, '', 'we')}},             //! Control HW write (active high)
+  {%- endif %}
 
+  {%- if node.is_hw_writable %}
+    input  logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node, '', 'wdata')}},          //! HW write data
   {%- endif -%}
 
   {%- if node.is_hw_readable %}

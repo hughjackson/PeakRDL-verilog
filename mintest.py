@@ -15,7 +15,7 @@ import re
 if len(sys.argv) == 1:
     testcases = glob('test/testcases/*.rdl')
 else:
-    testcases = [sys.argv[2]]
+    testcases = glob('test/testcases/{}.rdl'.format(sys.argv[1]))
 
 #-------------------------------------------------------------------------------
 results = {}
