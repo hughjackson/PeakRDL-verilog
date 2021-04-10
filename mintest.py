@@ -44,26 +44,43 @@ for case in testcases:
     #-------------------------------------------------------------------------------
     if which('vcs') == None:
         results[case] = "Generated SV, no VCS binary found"
-        continue
-
-    proc = subprocess.run(['vcs', '-sverilog', rf_file, tb_file, '+vcs+vcdpluson'])
-
-    if proc.returncode:
-        print ("Error: vcs returned {}".format(proc.returncode))
-        results[case] = "VCS compile failed"
-        continue
-
-    #-------------------------------------------------------------------------------
-    # Run the testbench
-    #-------------------------------------------------------------------------------
-    proc = subprocess.run(['./simv', '-l', testcase_name+'.log'], capture_output=True, text=True)
-    
-    if re.search("TB: test complete", proc.stdout):
-        results[case] = "Test passed"
     else:
-        results[case] = "Test failed ({})".format(testcase_name+'.log')
+
+        proc = subprocess.run(['vcs', '-sverilog', rf_file, tb_file, '+vcs+vcdpluson'])
+
+        if proc.returncode:
+            print ("Error: vcs returned {}".format(proc.returncode))
+            results[case] = "VCS compile failed"
+            
+        else:
+
+            #-------------------------------------------------------------------------------
+            # Run the testbench
+            #-------------------------------------------------------------------------------
+            proc = subprocess.run(['./simv', '-l', testcase_name+'.log'], capture_output=True, text=True)
+                
+            if re.search("TB: test complete", proc.stdout):
+                results[case] = "Test passed"
+            else:
+                results[case] = "Test failed ({})".format(testcase_name+'.log')
+ 
+    #-------------------------------------------------------------------------------
+    # Verilator if it exists
+    #-------------------------------------------------------------------------------
+    if which('verilator') == None:
+        results[case] += " - No verilator"
+    else:
+        proc = subprocess.run(['verilator', '--lint-only', "-Wall", rf_file])
+
+        if proc.returncode:
+            print ("Error: verilator returned {}".format(proc.returncode))
+            results[case] += " - Verilator lint failed"
+        else:
+            results[case] += " - Verilator lint passed"
+            
+
     print("\n\n\t{}\n\n".format(results[case]))
 
 print("================================================")
 for k,v in results.items():
-    print("{}: {}".format(k, v))
+    print("{:30s}: {}".format(k, v))
