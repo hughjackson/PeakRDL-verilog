@@ -21,6 +21,9 @@ module {{get_inst_name(top_node)}}_rf #(
     output logic {{node.full_array_ranges}}        {{signal(node, '', 'halt')}}, //! Combined halt line for {{get_inst_name(node).upper()}}
   {%- endif -%}
 
+ {%- elif isinstance(node, SignalNode) %}
+    input  logic /*node.full_array_ranges*/ [{{node.get_property('signalwidth')-1}}:0] {{signal(node)}},  //! signal
+
  {%- elif isinstance(node, FieldNode) -%}
   {%- if node.get_property('swmod') %}
     output logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'swmod')}},          //! Indicates SW has modified this field
@@ -57,7 +60,7 @@ module {{get_inst_name(top_node)}}_rf #(
     input  logic  {{node.parent.full_array_ranges}}       {{signal(node, '', 'we')}},             //! Control HW write (active high)
   {%- endif %}
 
-  {%- if node.is_hw_writable %}
+  {%- if node.is_hw_writable and not node.get_property('next') %}
     input  logic {{node.parent.full_array_ranges}}[{{node.bit_range_zero}}] {{signal(node, '', 'wdata')}},          //! HW write data
   {%- endif -%}
 
