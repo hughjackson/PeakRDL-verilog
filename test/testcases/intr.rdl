@@ -7,6 +7,9 @@ addrmap intr #(longint unsigned PARAM = 0x10) {
         default intr;
         field {} i0;
         field {} i1;
+        field {} hmask;
+        field {} h0;
+        h0->haltmask = hmask;
         field {sticky; intr=false;} reason[31:24];
     } basic;
 };
