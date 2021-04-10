@@ -8,6 +8,17 @@ addrmap basic #(longint unsigned PARAM = 0x10) {
         field {} basicfield[31:0];
     } basicreg;
 
+    reg {
+        default sw = rw;
+        default hw = rw;
+        field {} val2[7:0];
+        field {} mask[15:8];
+        field {} enable[23:16];
+        field {} val[31:24];
+        val->hwmask = mask;
+        val2->hwenable = enable;
+    } hwmask;
+
     regfile t_foo #(longint unsigned PARAM = 0x2) {
         reg reg_t{
             field {sw=rw; hw=r;} f1[15:0] = 1234;

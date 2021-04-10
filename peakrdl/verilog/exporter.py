@@ -23,6 +23,7 @@ class VerilogExporter:
         user_template_dir = kwargs.pop("user_template_dir", None)
         self.user_template_context = kwargs.pop("user_template_context", dict())
         self.signal_overrides = {}
+        self.strict = False # strict RDL rules rather than helpful impliciti behaviour
 
         # Check for stray kwargs
         if kwargs:
@@ -61,8 +62,10 @@ class VerilogExporter:
         FieldNode.add_derived_property(self.is_up_counter)
         FieldNode.add_derived_property(self.is_down_counter)
         FieldNode.add_derived_property(self.bit_range)
+        FieldNode.add_derived_property(self.bit_range_zero)
         FieldNode.add_derived_property(self.full_array_ranges)
         FieldNode.add_derived_property(self.full_array_dimensions)
+        FieldNode.add_derived_property(self.has_we)
         RegfileNode.add_derived_property(self.full_array_dimensions)
         RegfileNode.add_derived_property(self.full_array_ranges)
 
@@ -273,11 +276,11 @@ class VerilogExporter:
         return s
 
 
-    def _get_signal_name(self, node: Node, index : str = '', prop : str = '') -> str:
+    def _get_signal_name(self, node: Node, index: str = '', prop: str = '') -> str:
         """
         Returns unique-in-addrmap name for signals
         """
-        prefix = node.get_rel_path(node.owning_addrmap,'','_','','')
+        prefix = node.get_rel_path(node.owning_addrmap, '', '_', '', '')
 
         # check for override, otherwise use prop
         suffix = self.signal_overrides.get(prop, prop)
@@ -345,7 +348,7 @@ class VerilogExporter:
         elif val is True or val is None:
             return "{}'d{}".format(width, default)                  # default value
         else:
-            err = "ERROR: property {} of type {} not recognised".format(prop, type(prop))
+            err = "ERROR: property {} of type {} not recognised".format(prop, type(val))
             print(err)
             return err
 
@@ -374,10 +377,10 @@ class VerilogExporter:
         Field is an up counter
         """
         return (node.get_property('counter') and
-                ( node.get_property('incrvalue') or
-                  node.get_property('incrwidth') or
-                  node.get_property('incr') or
-                  not node.is_down_counter ) )
+                (node.get_property('incrvalue') or
+                 node.get_property('incrwidth') or
+                 node.get_property('incr') or
+                 not node.is_down_counter))
 
 
     def is_down_counter(self, node) -> bool:
@@ -385,9 +388,9 @@ class VerilogExporter:
         Field is an up counter
         """
         return (node.get_property('counter') and
-                ( node.get_property('decrvalue') or
-                  node.get_property('decrwidth') or
-                  node.get_property('decr') ) )
+                (node.get_property('decrvalue') or
+                 node.get_property('decrwidth') or
+                 node.get_property('decr')))
 
 
     def is_hw_writable(self, node) -> bool:
@@ -451,7 +454,7 @@ class VerilogExporter:
             return []
         else:
             if node.is_array and not node.current_idx:
-                print (node.get_path_segment(), node.current_idx)
+                print(node.get_path_segment(), node.current_idx)
             return self._full_idx_list(node.parent) + (list(node.current_idx or []))
 
 
@@ -465,7 +468,14 @@ class VerilogExporter:
             return fmt.format(lsb=node.lsb, msb=node.msb)
 
 
-    def has_intr(self, node : RegNode) -> bool:
+    def bit_range_zero(self, node, fmt='{msb:2}: 0') -> str:
+        """
+        Formatted bit range for field
+        """
+        return fmt.format(msb=node.width-1)
+
+
+    def has_intr(self, node: RegNode) -> bool:
         """
         Register has interrupt fields
         """
@@ -473,3 +483,21 @@ class VerilogExporter:
             if f.get_property('intr'):
                 return True
         return False
+
+
+    def has_we(self, node: FieldNode) -> bool:
+        """
+        Field has we input
+        """
+        if self.strict:
+            # strict RDL says no we unless specified
+            return node.get_property('we') is True
+
+        if node.get_property('wel') is not False:
+            # can't have we and wel
+            return False
+
+        return ((node.get_property('we') is True) or    # explicit
+                (node.implements_storage and
+                 node.is_hw_writable and
+                 node.get_property('sticky') is not True))  # storage without sticky unlikely to not want we

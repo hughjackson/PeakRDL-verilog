@@ -5,10 +5,10 @@
     assert(exp==val) else $fatal  ("\n\t%s == %s: 0x%0h != 0x%0h\n", `ST(val), `ST(exp), val, exp);
 
 `define HW_WRITE(name, idx, val) \
-            ``name``_wr``idx <= 1'b1; \
+            ``name``_we``idx <= 1'b1; \
             ``name``_wdata``idx <= val; \
             @(posedge clk); \
-            ``name``_wr``idx <= '0;
+            ``name``_we``idx <= '0;
 
 `define HW_COUNT(name, idx, dir) \
             ``name``_``dir````idx <= 1'b1; \
@@ -74,9 +74,9 @@ module {{get_inst_name(top_node)}}_tb #(
     logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'hwclr')}},
   {%- endif %}
  {%- if node.is_hw_writable %}
-    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'wr')}};
+    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'we')}};
+    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'wel')}};
     logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node, '', 'wdata')}};
-
  {%- endif -%}
  {%- if node.is_hw_readable %}
     logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node, '', 'q')}};
