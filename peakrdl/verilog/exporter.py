@@ -3,7 +3,7 @@ import itertools
 
 import jinja2 as jj
 from systemrdl.node import RootNode, Node, RegNode, AddrmapNode, RegfileNode
-from systemrdl.node import FieldNode, MemNode, AddressableNode
+from systemrdl.node import FieldNode, MemNode, AddressableNode, SignalNode
 from systemrdl.rdltypes import AccessType, OnReadType, OnWriteType, InterruptType, PropertyReference
 #from systemrdl import RDLWalker
 
@@ -70,6 +70,7 @@ class VerilogExporter:
         FieldNode.add_derived_property(self.has_halt)
         RegfileNode.add_derived_property(self.full_array_dimensions)
         RegfileNode.add_derived_property(self.full_array_ranges)
+        SignalNode.add_derived_property(self.full_array_ranges)
 
         # Top-level node
         self.top = None
@@ -127,7 +128,7 @@ class VerilogExporter:
             print("Generating reg_block for {}".format(self._get_inst_name(block)))
             self.top = block
 
-
+            print(list(node.children()))
             # First, traverse the model and collect some information
             #self.bus_width_db = {}
             #RDLWalker().walk(self.top)
@@ -142,6 +143,7 @@ class VerilogExporter:
                 'AddrmapNode': AddrmapNode,
                 'MemNode': MemNode,
                 'AddressableNode': AddressableNode,
+                'SignalNode': SignalNode,
                 'OnWriteType': OnWriteType,
                 'OnReadType': OnReadType,
                 'InterruptType': InterruptType,
@@ -343,6 +345,8 @@ class VerilogExporter:
             return self._get_signal_name(val, index, 'q')           # reference to field
         elif isinstance(val, PropertyReference):
             return self._get_signal_name(val.node, index, val.name) # reference to field property
+        elif isinstance(val, SignalNode):
+            return self._get_signal_name(val)                       # reference to signal
         if type(val) == int:
             return "{}'d{}".format(width, val)                      # specified value
         elif ((val is True and hw_on_true) or

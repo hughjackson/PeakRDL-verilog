@@ -2,7 +2,7 @@
 
 {%- macro body(node, offset='ADDR_OFFSET', index='') -%}
 
-{%- set offset = offset + "+'h{:x}".format(node.raw_address_offset) -%}
+{%- set offset = offset + "+'h{:x}".format(node.raw_address_offset or 255) -%}
 {%- set IDX = signal(node).upper()+'_IDX' -%}
 
 {%- if node.is_array %}
@@ -18,9 +18,12 @@ for ({{IDX}} = 0;
 
 {%- if isinstance(node, RegNode) %}
     {{register.body(node, offset, index)|indent(width=4*node.is_array)}}
+initial $error("{{type(node).__name__}} unsupported");
 {%- elif isinstance(node, (AddrmapNode, RegfileNode)) %}
     {%- for child in node.children() %}
+        {%- if not isinstance(child, SignalNode) %}
         {{body(child, offset, index)|indent(width=4*node.is_array,first=True)}}
+        {%- endif %}
     {%- endfor -%}
 {%- else %}
 initial $error("{{type(node).__name__}} unsupported");

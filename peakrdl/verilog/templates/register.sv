@@ -89,6 +89,8 @@ assign {{signal(child, index, 'next')}} = {{signal(child, index, 'wdata')}} & ~{
 assign {{signal(child, index, 'next')}} = ~{{signal(child, index, 'wdata')}} & {{signal(child, '', 'wdata')}}_d; // negedge
 {%- elif child.get_property('intr') and child.get_property('intr type') == InterruptType.bothedge %}
 assign {{signal(child, index, 'next')}} = {{signal(child, index, 'wdata')}} ^ {{signal(child, '', 'wdata')}}_d; // bothedge
+{%- elif child.get_property('next') %}
+assign {{signal(child, index, 'next')}} = {{get_prop_value(child, index, 'next')}};
 {%- elif child.is_hw_writable %}
 assign {{signal(child, index, 'next')}} = {{signal(child, index, 'wdata')}};
 {%- endif %}
