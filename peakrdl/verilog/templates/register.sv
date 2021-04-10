@@ -46,6 +46,10 @@ assign {{signal(child, index, 'intr')}} = {{signal(child, index, 'q')}}
     ;
 {%- endif %}
 
+assign {{signal(child, index, 'anded')}} = & {{signal(child, index, 'q')}};
+assign {{signal(child, index, 'ored')}}  = | {{signal(child, index, 'q')}};
+assign {{signal(child, index, 'xored')}} = ^ {{signal(child, index, 'q')}};
+
 {%- if not child.implements_storage %}
     {%- if child.is_hw_writable %}
 assign {{signal(child, index, 'q')}} = {{signal(child)}}_wdata;

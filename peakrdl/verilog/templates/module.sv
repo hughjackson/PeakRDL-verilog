@@ -58,7 +58,16 @@ module {{get_inst_name(top_node)}}_rf #(
 
   {%- if node.is_hw_readable %}
     output logic {{node.parent.full_array_ranges}}[{{node.bit_range_zero}}] {{signal(node, '', 'q')}},              //! Current field value
+  {%- endif -%}
 
+  {%- if node.get_property('anded') %}
+    output logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'anded')}},          //! Current field value (AND reduced)
+  {%- endif -%}
+  {%- if node.get_property('ored') %}
+    output logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'ored')}},           //! Current field value (OR reduced)
+  {%- endif -%}
+  {%- if node.get_property('xored') %}
+    output logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'xored')}},          //! Current field value (XOR reduced)
   {%- endif -%}
 
   {%- if node.is_up_counter %}
@@ -113,11 +122,22 @@ module {{get_inst_name(top_node)}}_rf #(
 
 /* verilator lint_off UNUSED */
     // local output signals for fields (unless block outputs)
+    // these can be used as references in other fields
 {%- for node in top_node.descendants() -%}
  {%- if isinstance(node, FieldNode) -%}
 
   {%- if not node.is_hw_readable %}
     logic       {{node.parent.full_array_ranges}}[{{node.bit_range_zero}}] {{signal(node, '', 'q')}};
+  {%- endif -%}
+
+  {%- if not node.get_property('anded') %}
+    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'anded')}};
+  {%- endif -%}
+  {%- if not node.get_property('ored') %}
+    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'ored')}};
+  {%- endif -%}
+  {%- if not node.get_property('xored') %}
+    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'xored')}};
   {%- endif -%}
 
   {%- if node.is_up_counter %}
