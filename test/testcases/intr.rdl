@@ -4,7 +4,7 @@ addrmap intr #(longint unsigned PARAM = 0x10) {
     reg {
         default sw = rw;
         default hw = rw;
-        default intr;
+        default posedge intr;
         field {} i0;
         field {} i1;
         field {} hmask;

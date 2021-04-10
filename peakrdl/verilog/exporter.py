@@ -4,7 +4,7 @@ import itertools
 import jinja2 as jj
 from systemrdl.node import RootNode, Node, RegNode, AddrmapNode, RegfileNode
 from systemrdl.node import FieldNode, MemNode, AddressableNode
-from systemrdl.rdltypes import AccessType, OnReadType, OnWriteType, PropertyReference
+from systemrdl.rdltypes import AccessType, OnReadType, OnWriteType, InterruptType, PropertyReference
 #from systemrdl import RDLWalker
 
 class VerilogExporter:
@@ -144,6 +144,7 @@ class VerilogExporter:
                 'AddressableNode': AddressableNode,
                 'OnWriteType': OnWriteType,
                 'OnReadType': OnReadType,
+                'InterruptType': InterruptType,
                 'PropertyReference': PropertyReference,
                 'isinstance': isinstance,
                 'signal': self._get_signal_name,

@@ -133,7 +133,8 @@ module {{get_inst_name(top_node)}}_rf #(
 
   {%- if not node.is_hw_readable %}
     logic       {{node.parent.full_array_ranges}}[{{node.bit_range_zero}}] {{signal(node, '', 'q')}};
-  {%- endif -%}
+  {%- endif %}
+    logic       {{node.parent.full_array_ranges}}[{{node.bit_range_zero}}] {{signal(node, '', 'next')}};
 
   {%- if not node.get_property('anded') %}
     logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'anded')}};
