@@ -276,11 +276,11 @@ class VerilogExporter:
         return s
 
 
-    def _get_signal_name(self, node: Node, index : str = '', prop : str = '') -> str:
+    def _get_signal_name(self, node: Node, index: str = '', prop: str = '') -> str:
         """
         Returns unique-in-addrmap name for signals
         """
-        prefix = node.get_rel_path(node.owning_addrmap,'','_','','')
+        prefix = node.get_rel_path(node.owning_addrmap, '', '_', '', '')
 
         # check for override, otherwise use prop
         suffix = self.signal_overrides.get(prop, prop)
@@ -377,10 +377,10 @@ class VerilogExporter:
         Field is an up counter
         """
         return (node.get_property('counter') and
-                ( node.get_property('incrvalue') or
-                  node.get_property('incrwidth') or
-                  node.get_property('incr') or
-                  not node.is_down_counter ) )
+                (node.get_property('incrvalue') or
+                 node.get_property('incrwidth') or
+                 node.get_property('incr') or
+                 not node.is_down_counter))
 
 
     def is_down_counter(self, node) -> bool:
@@ -388,9 +388,9 @@ class VerilogExporter:
         Field is an up counter
         """
         return (node.get_property('counter') and
-                ( node.get_property('decrvalue') or
-                  node.get_property('decrwidth') or
-                  node.get_property('decr') ) )
+                (node.get_property('decrvalue') or
+                 node.get_property('decrwidth') or
+                 node.get_property('decr')))
 
 
     def is_hw_writable(self, node) -> bool:
@@ -454,7 +454,7 @@ class VerilogExporter:
             return []
         else:
             if node.is_array and not node.current_idx:
-                print (node.get_path_segment(), node.current_idx)
+                print(node.get_path_segment(), node.current_idx)
             return self._full_idx_list(node.parent) + (list(node.current_idx or []))
 
 
@@ -475,7 +475,7 @@ class VerilogExporter:
         return fmt.format(msb=node.width-1)
 
 
-    def has_intr(self, node : RegNode) -> bool:
+    def has_intr(self, node: RegNode) -> bool:
         """
         Register has interrupt fields
         """
@@ -485,19 +485,19 @@ class VerilogExporter:
         return False
 
 
-    def has_we(self, node : FieldNode) -> bool:
+    def has_we(self, node: FieldNode) -> bool:
         """
         Field has we input
         """
         if self.strict:
             # strict RDL says no we unless specified
-            return node.get_property('we') == True
+            return node.get_property('we') is True
 
-        if node.get_property('wel') != False:
+        if node.get_property('wel') is not False:
             # can't have we and wel
-            return False 
+            return False
 
-        return ((node.get_property('we') == True) or    # explicit
+        return ((node.get_property('we') is True) or    # explicit
                 (node.implements_storage and
                  node.is_hw_writable and
-                 node.get_property('sticky') != True))  # storage without sticky unlikely to not want we
+                 node.get_property('sticky') is not True))  # storage without sticky unlikely to not want we
