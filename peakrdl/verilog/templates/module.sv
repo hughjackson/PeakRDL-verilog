@@ -35,7 +35,7 @@ module {{get_inst_name(top_node)}}_rf #(
 
   {%- if node.get_property('intr') %}
     // expand interrupt per field, leave open if not wanted
-    output logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node, '', 'intr')}}, //! Individual interrupt line for {{get_inst_name(node).upper()}}
+    output logic {{node.parent.full_array_ranges}}[{{node.bit_range_zero}}] {{signal(node, '', 'intr')}}, //! Individual interrupt line for {{get_inst_name(node).upper()}}
   {%- endif -%}
 
   {%- if node.get_property('hwset') == True %}
@@ -53,11 +53,11 @@ module {{get_inst_name(top_node)}}_rf #(
   {%- endif %}
 
   {%- if node.is_hw_writable %}
-    input  logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node, '', 'wdata')}},          //! HW write data
+    input  logic {{node.parent.full_array_ranges}}[{{node.bit_range_zero}}] {{signal(node, '', 'wdata')}},          //! HW write data
   {%- endif -%}
 
   {%- if node.is_hw_readable %}
-    output logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node, '', 'q')}},              //! Current field value
+    output logic {{node.parent.full_array_ranges}}[{{node.bit_range_zero}}] {{signal(node, '', 'q')}},              //! Current field value
 
   {%- endif -%}
 
@@ -117,7 +117,7 @@ module {{get_inst_name(top_node)}}_rf #(
  {%- if isinstance(node, FieldNode) -%}
 
   {%- if not node.is_hw_readable %}
-    logic       {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node, '', 'q')}};
+    logic       {{node.parent.full_array_ranges}}[{{node.bit_range_zero}}] {{signal(node, '', 'q')}};
   {%- endif -%}
 
   {%- if node.is_up_counter %}

@@ -62,6 +62,7 @@ class VerilogExporter:
         FieldNode.add_derived_property(self.is_up_counter)
         FieldNode.add_derived_property(self.is_down_counter)
         FieldNode.add_derived_property(self.bit_range)
+        FieldNode.add_derived_property(self.bit_range_zero)
         FieldNode.add_derived_property(self.full_array_ranges)
         FieldNode.add_derived_property(self.full_array_dimensions)
         FieldNode.add_derived_property(self.has_we)
@@ -465,6 +466,13 @@ class VerilogExporter:
             return fmt.format(lsb=0, msb=node.size*8-1)
         else:
             return fmt.format(lsb=node.lsb, msb=node.msb)
+
+
+    def bit_range_zero(self, node, fmt='{msb:2}: 0') -> str:
+        """
+        Formatted bit range for field
+        """
+        return fmt.format(msb=node.width-1)
 
 
     def has_intr(self, node : RegNode) -> bool:

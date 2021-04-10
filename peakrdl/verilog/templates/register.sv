@@ -190,7 +190,7 @@ end else begin
     // Counter increment
     {{signal(child, index, 'overflow')}} <= 1'b0;
     if ({{get_prop_value(child, index, 'incr', hw_on_none=True)}}) begin
-        logic [{{child.msb+1}}:{{child.lsb}}] next;
+        logic [{{child.width}}:0] next;
         /* verilator lint_off WIDTH */
         next = {{signal(child, index, 'q')}} + {{get_counter_value(child, index, 'incr')}};
         /* verilator lint_on WIDTH */
@@ -202,8 +202,8 @@ end else begin
         // saturate
         {{signal(child, index, 'overflow')}} <= 1'b0;
         {{signal(child, index, 'incrsaturate')}} <= 1'b0;
-        if (next[{{child.msb+1}}] ||
-            (next[{{child.bit_range}}] >= {{get_prop_value(child, index, 'incrsaturate',
+        if (next[{{child.width}}] ||
+            (next[{{child.bit_range_zero}}] >= {{get_prop_value(child, index, 'incrsaturate',
                                                             hw_on_true=False, default=-1,
                                                             width=child.width)}})) begin
             {{signal(child, index, 'q')}} <= {{get_prop_value(child, index, 'incrsaturate',
@@ -217,8 +217,8 @@ end else begin
 
         // threshold
         {{signal(child, index, 'incrthreshold')}} <= 1'b0;
-        if (next[{{child.msb+1}}] ||
-            (next[{{child.bit_range}}] >= {{get_prop_value(child, index, 'incrthreshold',
+        if (next[{{child.width}}] ||
+            (next[{{child.bit_range_zero}}] >= {{get_prop_value(child, index, 'incrthreshold',
                                                             hw_on_true=False, default=-1,
                                                             width=child.width)}})) begin
             {{signal(child, index, 'incrthreshold')}} <= 1'b1;
@@ -244,8 +244,8 @@ end else begin
         // saturate
         {{signal(child, index, 'underflow')}} <= 1'b0;
         {{signal(child, index, 'decrsaturate')}} <= 1'b0;
-        if (next[{{child.msb+1}}] ||
-            (next[{{child.bit_range}}] <= {{get_prop_value(child, index, 'decrsaturate',
+        if (next[{{child.width}}] ||
+            (next[{{child.bit_range_zero}}] <= {{get_prop_value(child, index, 'decrsaturate',
                                                             hw_on_true=False, default=0,
                                                             width=child.width)}})) begin
             {{signal(child, index, 'q')}} <= {{get_prop_value(child, index, 'decrsaturate',
@@ -259,13 +259,31 @@ end else begin
 
         // threshold
         {{signal(child, index, 'decrthreshold')}} <= 1'b0;
-        if (next[{{child.msb+1}}] ||
-            (next[{{child.bit_range}}] <= {{get_prop_value(child, index, 'decrthreshold',
+        if (next[{{child.width}}] ||
+            (next[{{child.bit_range_zero}}] <= {{get_prop_value(child, index, 'decrthreshold',
                                                             hw_on_true=False, default=0,
                                                             width=child.width)}})) begin
             {{signal(child, index, 'decrthreshold')}} <= 1'b1;
         end
         {%- endif %}
+    end
+    {%- endif %}
+
+    {%- if child.get_property('hwmask') %}
+    // Hardware masking
+    foreach({{signal(child, index, 'q')}}[BIT]) begin
+        if ({{get_prop_value(child, index, 'hwmask')}}[BIT]) begin
+            // overwrite any updates with current value
+            {{signal(child, index, 'q')}}[BIT] <= {{signal(child, index, 'q')}}[BIT];
+        end
+    end
+    {%- elif child.get_property('hwenable') %}
+    // Hardware enable
+    foreach({{signal(child, index, 'q')}}[BIT]) begin
+        if (!{{get_prop_value(child, index, 'hwenable')}}[BIT]) begin
+            // overwrite any updates with current value
+            {{signal(child, index, 'q')}}[BIT] <= {{signal(child, index, 'q')}}[BIT];
+        end
     end
     {%- endif %}
 end
