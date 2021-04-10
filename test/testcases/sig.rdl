@@ -1,0 +1,12 @@
+addrmap sig {
+
+    signal {
+        signalwidth = 8;
+    } mysig;
+
+    reg {
+        field {} f1[7:0];
+    } r1;
+
+    r1.f1->next = mysig;
+};
