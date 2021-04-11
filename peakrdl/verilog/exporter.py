@@ -101,8 +101,17 @@ class VerilogExporter:
             Output file.
         signal_overrides: dict
             Mapping to override default signal suffixes , e.g. {'incr' : 'increment'}
+        bus_type: str
+            bus type for the SW interface (default: native)
         """
         self.signal_overrides = kwargs.pop("signal_overrides", dict())
+        bus_type = kwargs.pop("bus_type", "native")
+
+        with open(os.path.join(os.path.dirname(__file__), "busses", "{}.ports.sv".format(bus_type))) as f:
+            sw_ports = f.read()
+        with open(os.path.join(os.path.dirname(__file__), "busses", "{}.impl.sv".format(bus_type))) as f:
+            sw_impl = f.read()
+
         if type(self.signal_overrides) != dict:
             raise TypeError("got an unexpected signal_overrides argument of type {} instead of dict".format(
                                 type(self.signal_overrides)))
@@ -128,7 +137,6 @@ class VerilogExporter:
             print("Generating reg_block for {}".format(self._get_inst_name(block)))
             self.top = block
 
-            print(list(node.children()))
             # First, traverse the model and collect some information
             #self.bus_width_db = {}
             #RDLWalker().walk(self.top)
@@ -137,6 +145,8 @@ class VerilogExporter:
                 'print': print,
                 'type': type,
                 'top_node': block,
+                'sw_ports': sw_ports,
+                'sw_impl': sw_impl,
                 'FieldNode': FieldNode,
                 'RegNode': RegNode,
                 'RegfileNode': RegfileNode,

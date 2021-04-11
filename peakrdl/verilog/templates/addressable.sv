@@ -18,7 +18,6 @@ for ({{IDX}} = 0;
 
 {%- if isinstance(node, RegNode) %}
     {{register.body(node, offset, index)|indent(width=4*node.is_array)}}
-initial $error("{{type(node).__name__}} unsupported");
 {%- elif isinstance(node, (AddrmapNode, RegfileNode)) %}
     {%- for child in node.children() %}
         {%- if not isinstance(child, SignalNode) %}
