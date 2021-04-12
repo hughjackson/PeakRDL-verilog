@@ -51,12 +51,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install .
-
-      - name: Generate verilog
-        run: python mintest.py
       
       - name: Install verilator
         run: sudo apt-get install verilator
 
-      - name: Verilator Lint
-        run: verilator --lint-only -Wall -Wno-MULTITOP test/testcases/*_rf.sv
+      - name: Generate verilog and test
+        run: python mintest.py
