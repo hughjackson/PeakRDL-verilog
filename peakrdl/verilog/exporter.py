@@ -6,6 +6,8 @@ from systemrdl.node import RootNode, Node, RegNode, AddrmapNode, RegfileNode
 from systemrdl.node import FieldNode, MemNode, AddressableNode, SignalNode
 from systemrdl.rdltypes import AccessType, OnReadType, OnWriteType, InterruptType, PropertyReference
 #from systemrdl import RDLWalker
+from pathlib import Path
+
 
 class VerilogExporter:
 
@@ -134,7 +136,6 @@ class VerilogExporter:
                     modules.append(desc.parent)
 
         for block in modules:
-            print("Generating reg_block for {}".format(self._get_inst_name(block)))
             self.top = block
 
             # First, traverse the model and collect some information
@@ -174,6 +175,9 @@ class VerilogExporter:
 
             context.update(self.user_template_context)
 
+            # ensure directory exists
+            Path(path).mkdir(parents=True, exist_ok=True)
+
             template = self.jj_env.get_template("module.sv")
             stream = template.stream(context)
             stream.dump(os.path.join(path, node.inst_name + '_rf.sv'))
@@ -183,6 +187,8 @@ class VerilogExporter:
             template = self.jj_env.get_template("tb.cpp")
             stream = template.stream(context)
             stream.dump(os.path.join(path, node.inst_name + '_tb.cpp'))
+
+        return [self._get_inst_name(m) for m in modules]
 
 
     def _get_inst_name(self, node: Node) -> str:
