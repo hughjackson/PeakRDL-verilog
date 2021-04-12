@@ -118,14 +118,7 @@ module {{get_inst_name(top_node)}}_rf #(
 {%- endfor %}
 
     // Register Bus
-    input  logic                             valid,    //! Active high valid
-    input  logic                             read,     //! Indicates request is a read
-    input  logic            [ADDR_WIDTH-1:0] addr,     //! Address (byte aligned, absolute address)
-    /* verilator lint_off UNUSED */
-    input  logic            [DATA_WIDTH-1:0] wdata,    //! Write data
-    input  logic          [DATA_WIDTH/8-1:0] wmask,    //! Write mask
-    /* verilator lint_on UNUSED */
-    output logic            [DATA_WIDTH-1:0] rdata     //! Read data
+    {{sw_ports|indent(4)}}
 );
 
 /* verilator lint_off UNUSED */
@@ -180,19 +173,20 @@ module {{get_inst_name(top_node)}}_rf #(
     // ============================================================
     // SW Access logic
     // ============================================================
+    logic sw_wr;
+    logic sw_rd;
+    /* verilator lint_off UNUSED */
+    logic [DATA_WIDTH-1:0] sw_mask;
+    logic [DATA_WIDTH-1:0] sw_wdata;
+    logic [DATA_WIDTH-1:0] sw_rdata;
+    logic [DATA_WIDTH-1:0] sw_masked_data;
+    /* verilator lint_on UNUSED */
 
-/* verilator lint_off UNUSED */
-    logic [DATA_WIDTH-1:0] mask;
-    logic [DATA_WIDTH-1:0] masked_data;
-/* verilator lint_on UNUSED */
+    // convert bus interface to internal sw_* signals
+    {{sw_impl|indent(4)}}
 
-    always_comb begin
-        int byte_idx;
-        for (byte_idx = 0; byte_idx < DATA_WIDTH/8; byte_idx+=1)
-          mask[8*(byte_idx+1)-1 -: 8] = {8{wmask[byte_idx]}};
-    end
-
-    assign masked_data = wdata & mask;
+    // helpful masked version of data
+    assign sw_masked_data = sw_wdata & sw_mask;
 
 {%- for node in top_node.descendants() -%}
 {%- if isinstance(node, RegNode) %}
@@ -200,13 +194,13 @@ module {{get_inst_name(top_node)}}_rf #(
 {%- endif -%}
 {%- endfor %}
 
-    assign rdata = // or of each register return (masked)
+    assign sw_rdata = // or of each register return (masked)
 {%- for node in top_node.descendants() if isinstance(node, RegNode) %}
     {%- set outer_loop = loop %}
     {%- for idx in node.full_array_indexes %}
                    {{signal(node, '', 'rdata')}}{{idx}}{{ " | " if not (outer_loop.last and loop.last)else ";" }}
     {%- endfor %}
-{%- endfor %}
+{%- endfor -%}
 
     {{ addressable.body(top_node)|indent}}
 
