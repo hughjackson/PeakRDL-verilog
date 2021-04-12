@@ -1,12 +1,12 @@
 import os
 import itertools
+from pathlib import Path
 
 import jinja2 as jj
 from systemrdl.node import RootNode, Node, RegNode, AddrmapNode, RegfileNode
 from systemrdl.node import FieldNode, MemNode, AddressableNode, SignalNode
 from systemrdl.rdltypes import AccessType, OnReadType, OnWriteType, InterruptType, PropertyReference
 #from systemrdl import RDLWalker
-from pathlib import Path
 
 
 class VerilogExporter:

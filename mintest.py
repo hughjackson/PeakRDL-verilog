@@ -27,7 +27,7 @@ for case in testcases:
     testcase_name = os.path.splitext(os.path.basename(case))[0]
     output_dir = os.path.dirname(rdl_file)
 
-    root = pv.compile(rdl_file)
+    root = pv.compile_rdl(rdl_file)
     modules = pv.generate(root, output_dir)
     pv.run_lint(modules, output_dir)
     pv.compile_verilog(modules, output_dir)
