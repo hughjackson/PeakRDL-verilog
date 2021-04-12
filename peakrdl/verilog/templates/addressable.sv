@@ -2,7 +2,7 @@
 
 {%- macro body(node, offset='ADDR_OFFSET', index='') -%}
 
-{%- set offset = offset + "+'h{:x}".format(node.raw_address_offset or 255) -%}
+{%- set offset = offset + "+'h{:x}".format(node.raw_address_offset) -%}
 {%- set IDX = signal(node).upper()+'_IDX' -%}
 
 {%- if node.is_array %}

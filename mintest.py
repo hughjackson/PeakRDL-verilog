@@ -33,51 +33,47 @@ for case in testcases:
     root = rdlc.elaborate().top
 
     rf_file = os.path.join(output_dir, testcase_name + "_rf.sv")
-    tb_file = os.path.join(output_dir, testcase_name + "_tb.sv")
+    ctb_file = os.path.join(output_dir, testcase_name + "_tb.cpp")
 
     VerilogExporter().export(
         root, output_dir
     )
-
-    #-------------------------------------------------------------------------------
-    # Build VCS binary if it exists
-    #-------------------------------------------------------------------------------
-    if which('vcs') == None:
-        results[case] = "Generated SV, no VCS binary found"
-    else:
-
-        proc = subprocess.run(['vcs', '-sverilog', rf_file, tb_file, '+vcs+vcdpluson'])
-
-        if proc.returncode:
-            print ("Error: vcs returned {}".format(proc.returncode))
-            results[case] = "VCS compile failed"
-            
-        else:
-
-            #-------------------------------------------------------------------------------
-            # Run the testbench
-            #-------------------------------------------------------------------------------
-            proc = subprocess.run(['./simv', '-l', testcase_name+'.log'], capture_output=True, text=True)
-                
-            if re.search("TB: test complete", proc.stdout):
-                results[case] = "Test passed"
-            else:
-                results[case] = "Test failed ({})".format(testcase_name+'.log')
  
     #-------------------------------------------------------------------------------
-    # Verilator if it exists
+    # Verilator
     #-------------------------------------------------------------------------------
     if which('verilator') == None:
-        results[case] += " - No verilator"
+        results[case] = "No verilator"
     else:
         proc = subprocess.run(['verilator', '--lint-only', "-Wall", rf_file])
 
         if proc.returncode:
             print ("Error: verilator returned {}".format(proc.returncode))
-            results[case] += " - Verilator lint failed"
-        else:
-            results[case] += " - Verilator lint passed"
+            results[case] = "Verilator lint failed"
+            continue
             
+        proc = subprocess.run(['verilator', '--cc', rf_file, '--exe', ctb_file])
+
+        if proc.returncode:
+            print ("Error: verilator returned {}".format(proc.returncode))
+            results[case] = "Verilator compile failed"
+            continue
+
+        proc = subprocess.run(['make', '-C', 'obj_dir', '-f', 'V{}_rf.mk'.format(testcase_name), 'V{}_rf'.format(testcase_name)])
+        
+        if proc.returncode:
+            print ("Error: gcc returned {}".format(proc.returncode))
+            results[case] = "GCC compile failed"
+            continue
+
+        proc = subprocess.run(['./obj_dir/V{}_rf'.format(testcase_name)])
+
+        if proc.returncode:
+            print ("Error: sim returned {}".format(proc.returncode))
+            results[case] = "Verilator Simulation failed"
+            continue
+        else:
+            results[case] = "Verilator Simulation passed"
 
     print("\n\n\t{}\n\n".format(results[case]))
 

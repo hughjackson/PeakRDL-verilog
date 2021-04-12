@@ -180,6 +180,9 @@ class VerilogExporter:
             template = self.jj_env.get_template("tb.sv")
             stream = template.stream(context)
             stream.dump(os.path.join(path, node.inst_name + '_tb.sv'))
+            template = self.jj_env.get_template("tb.cpp")
+            stream = template.stream(context)
+            stream.dump(os.path.join(path, node.inst_name + '_tb.cpp'))
 
 
     def _get_inst_name(self, node: Node) -> str:
