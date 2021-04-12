@@ -105,7 +105,6 @@ int main(int argc, char** argv) {
         int temp, value;
 
         temp = top->{{backdoor(node)}} << {{node.lsb}};
-        std::cout << main_time << ": " << IDX << ": " << RANGE(temp, {{node.width}}, {{node.lsb}}) << "\n";
     {%- if node.get_property('onwrite') == OnWriteType.woset %}
         temp |= 1<<IDX;
         value = temp;
