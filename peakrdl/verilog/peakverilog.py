@@ -18,26 +18,26 @@ def parse_args():
     return parser.parse_args()
 
 
-def compile():
+def compile(infile):
     '''compile the rdl'''
     rdlc = RDLCompiler()
-    rdlc.compile_file(args.infile)
+    rdlc.compile_file(infile)
     return rdlc.elaborate().top
 
 
-def generate(root):
+def generate(root, outdir):
     '''generate the verilog'''
-    print('Info: Generating verilog for {} ({})'.format(root.inst_name, args.infile))
+    print('Info: Generating verilog for {}'.format(root.inst_name))
     modules = VerilogExporter().export(
-        root, args.outdir
+        root, outdir
     )
 
     return modules
 
 
-def run_lint(modules):
+def run_lint(modules, outdir):
     for m in modules:
-        rf_file = os.path.join(args.outdir, '{}_rf.sv'.format(m))
+        rf_file = os.path.join(outdir, '{}_rf.sv'.format(m))
 
         print('Info: Linting {} ({})'.format(m, rf_file))
         proc = subprocess.run(['verilator', '--lint-only', "-Wall", rf_file])
@@ -47,10 +47,10 @@ def run_lint(modules):
             exit(1)
 
 
-def compile_verilog(modules):
+def compile_verilog(modules, outdir):
     for m in modules:
-        rf_file = os.path.join(args.outdir, '{}_rf.sv'.format(m))
-        tb_file = os.path.join(args.outdir, '{}_tb.cpp'.format(m))
+        rf_file = os.path.join(outdir, '{}_rf.sv'.format(m))
+        tb_file = os.path.join(outdir, '{}_tb.cpp'.format(m))
 
         print('Info: Compiling {} ({})'.format(m, rf_file))
         proc = subprocess.run(['verilator', '--cc', rf_file, '--exe', tb_file])
@@ -78,8 +78,8 @@ def simulate(modules):
 if __name__ == '__main__':
     '''Main entry point'''
     args = parse_args()
-    root = compile()
-    modules = generate(root)
-    run_lint(modules)
-    compile_verilog(modules)
+    root = compile(args.infile)
+    modules = generate(root, args.outdir)
+    run_lint(modules, args.outdir)
+    compile_verilog(modules, args.outdir)
     simulate(modules)

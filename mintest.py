@@ -8,6 +8,8 @@ import subprocess
 
 from systemrdl import RDLCompiler, AddrmapNode, RegfileNode, MemNode, RegNode, FieldNode
 from peakrdl.verilog.exporter import VerilogExporter
+import peakrdl.verilog.peakverilog as pv
+
 from glob import glob
 from shutil import which
 import re
@@ -25,58 +27,11 @@ for case in testcases:
     testcase_name = os.path.splitext(os.path.basename(case))[0]
     output_dir = os.path.dirname(rdl_file)
 
-    #-------------------------------------------------------------------------------
-    # Generate Verilog model
-    #-------------------------------------------------------------------------------
-    rdlc = RDLCompiler()
-    rdlc.compile_file(rdl_file)
-    root = rdlc.elaborate().top
+    root = pv.compile(rdl_file)
+    modules = pv.generate(root, output_dir)
+    pv.run_lint(modules, output_dir)
+    pv.compile_verilog(modules, output_dir)
+    pv.simulate(modules)
+    print("\n-----------------------------------------------------------------\n")
 
-    rf_file = os.path.join(output_dir, testcase_name + "_rf.sv")
-    ctb_file = os.path.join(output_dir, testcase_name + "_tb.cpp")
-
-    VerilogExporter().export(
-        root, output_dir
-    )
- 
-    #-------------------------------------------------------------------------------
-    # Verilator
-    #-------------------------------------------------------------------------------
-    if which('verilator') == None:
-        results[case] = "No verilator"
-    else:
-        proc = subprocess.run(['verilator', '--lint-only', "-Wall", rf_file])
-
-        if proc.returncode:
-            print ("Error: verilator returned {}".format(proc.returncode))
-            results[case] = "Verilator lint failed"
-            continue
-            
-        proc = subprocess.run(['verilator', '--cc', rf_file, '--exe', ctb_file])
-
-        if proc.returncode:
-            print ("Error: verilator returned {}".format(proc.returncode))
-            results[case] = "Verilator compile failed"
-            continue
-
-        proc = subprocess.run(['make', '-C', 'obj_dir', '-f', 'V{}_rf.mk'.format(testcase_name), 'V{}_rf'.format(testcase_name)])
-        
-        if proc.returncode:
-            print ("Error: gcc returned {}".format(proc.returncode))
-            results[case] = "GCC compile failed"
-            continue
-
-        proc = subprocess.run(['./obj_dir/V{}_rf'.format(testcase_name)])
-
-        if proc.returncode:
-            print ("Error: sim returned {}".format(proc.returncode))
-            results[case] = "Verilator Simulation failed"
-            continue
-        else:
-            results[case] = "Verilator Simulation passed"
-
-    print("\n\n\t{}\n\n".format(results[case]))
-
-print("================================================")
-for k,v in results.items():
-    print("{:30s}: {}".format(k, v))
+print("\tALL TESTS COMPLETED\n")
