@@ -33,7 +33,14 @@
             top->read = 1; \
             top->addr = ADDR; \
             cycle(top); \
-            cycle(top); \
+            top->valid = 0;
+
+#define SW_WRITE(ADDR, DATA) \
+            top->valid = 1; \
+            top->read = 0; \
+            top->addr = ADDR; \
+            top->wdata = DATA; \
+            top->wmask = -1; \
             cycle(top); \
             top->valid = 0;
  
@@ -77,6 +84,7 @@ int main(int argc, char** argv) {
     cycle(top);
     cycle(top);
     std::cout << main_time << ": Testcase ({{signal(node)}} {{full_idx(node.parent)}}):\n";
+
   {%- if node.is_hw_writable and not node.get_property('next') and not node.get_property('intr') and not node.get_property('sticky') %}
     std::cout << main_time << ": \tHardware write test\n";
     for (int IDX = {{node.lsb}}; IDX <= {{node.msb}}; ++IDX) {
@@ -90,6 +98,51 @@ int main(int argc, char** argv) {
         CHECK_EQUAL(top->{{backdoor(node)}}, 0)
     }
   {%- endif -%}
+
+  {%- if node.is_sw_writable and not node.get_property('swwe') %}
+    std::cout << main_time << ": \tSoftware write test\n";
+    for (int IDX = {{node.lsb}}; IDX <= {{node.msb}}; ++IDX) {
+        int temp, value;
+
+        temp = top->{{backdoor(node)}} << {{node.lsb}};
+    {%- if node.get_property('onwrite') == OnWriteType.woset %}
+        temp |= 1<<IDX;
+        value = temp;
+    {%- elif node.get_property('onwrite') == OnWriteType.woclr %}
+        temp &= ~(1<<IDX);
+        value = temp;
+    {%- elif node.get_property('onwrite') == OnWriteType.wot %}
+        temp ^= 1<<IDX;
+        value = temp;
+    {%- elif node.get_property('onwrite') == OnWriteType.wzs %}
+        temp |= ~(1<<IDX);
+        value = -1;
+    {%- elif node.get_property('onwrite') == OnWriteType.wzc %}
+        temp &= (1<<IDX);
+        value = 0;
+    {%- elif node.get_property('onwrite') == OnWriteType.wzt %}
+        temp ^= ~(1<<IDX);
+        value = ~temp;
+    {%- elif node.get_property('onwrite') == OnWriteType.wclr %}
+        temp = 0;
+        value = 0;
+    {%- elif node.get_property('onwrite') == OnWriteType.wset %}
+        temp = -1;
+        value = -1;
+    {%- else %}
+        temp = (1 << IDX);
+        value = 0;
+    {%- endif %}
+
+        SW_WRITE( {{node.parent.absolute_address}}, (1 << IDX) )
+        CHECK_EQUAL(top->{{backdoor(node)}}, RANGE(temp, {{node.width}}, {{node.lsb}}))
+
+        SW_WRITE( {{node.parent.absolute_address}}, 0 )
+        CHECK_EQUAL(top->{{backdoor(node)}}, RANGE(value, {{node.width}}, {{node.lsb}}))
+
+    }
+  {%- endif -%}
+
 {%- endif -%}
 {%- endfor %}
 

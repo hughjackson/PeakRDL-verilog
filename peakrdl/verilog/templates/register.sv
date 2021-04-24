@@ -144,70 +144,6 @@ end else begin
     {{signal(child, index, 'q')}} <= '0;
     {%- endif %}
 
-    {%- if child.is_sw_readable and child.get_property('onread') %}
-    // Software read
-    if ({{signal(node)}}_sw_rd) begin
-
-    {%- if child.get_property('swmod') %}
-        {{signal(child, index, 'swmod')}} <= 1'b1;
-    {%- endif %}
-
-    {%- if child.get_property('onread') == OnReadType.rclr %}
-        {{signal(child, index, 'q')}} <= '0;
-
-    {%- elif child.get_property('onread') == OnReadType.rset %}
-        {{signal(child, index, 'q')}} <= '1;
-
-    {%- endif %}
-    end
-    {%- endif %}
-
-    {%- if child.is_sw_writable %}
-    // Software write
-    if ({{signal(node)}}_sw_wr
-        {%- if child.get_property('swwe') -%}
-        {{' '}}&& {{get_prop_value(child, index, 'swwe')}}
-        {%- elif child.get_property('swwel') -%}
-        {{' '}}&& !{{get_prop_value(child, index, 'swwel')}}
-        {%- endif -%}
-        ) begin
-
-
-    {%- if child.get_property('swmod') %}
-        {{signal(child, index, 'swmod')}} <= 1'b1;
-    {%- endif %}
-
-    {%- if child.get_property('onwrite') == OnWriteType.woset %}
-        {{signal(child, index, 'q')}} <=  sw_masked_data[{{child.bit_range}}] |  {{signal(child, index, 'q')}};
-
-    {%- elif child.get_property('onwrite') == OnWriteType.woclr %}
-        {{signal(child, index, 'q')}} <= ~sw_masked_data[{{child.bit_range}}] &  {{signal(child, index, 'q')}};
-
-    {%- elif child.get_property('onwrite') == OnWriteType.wot %}
-        {{signal(child, index, 'q')}} <=  sw_masked_data[{{child.bit_range}}] ^  {{signal(child, index, 'q')}};
-
-    {%- elif child.get_property('onwrite') == OnWriteType.wzs %}
-        {{signal(child, index, 'q')}} <= ~sw_masked_data[{{child.bit_range}}] |  {{signal(child, index, 'q')}};
-
-    {%- elif child.get_property('onwrite') == OnWriteType.wzc %}
-        {{signal(child, index, 'q')}} <=  sw_masked_data[{{child.bit_range}}] &  {{signal(child, index, 'q')}};
-
-    {%- elif child.get_property('onwrite') == OnWriteType.wzt %}
-        {{signal(child, index, 'q')}} <= ~sw_masked_data[{{child.bit_range}}] ^  {{signal(child, index, 'q')}};
-
-    {%- elif child.get_property('onwrite') == OnWriteType.wclr %}
-        {{signal(child, index, 'q')}} <= '0;
-
-    {%- elif child.get_property('onwrite') == OnWriteType.wset %}
-        {{signal(child, index, 'q')}} <= '1;
-
-    {%- else %}
-        {{signal(child, index, 'q')}} <=  sw_masked_data[{{child.bit_range}}] | ({{signal(child, index, 'q')}} & ~sw_mask[{{child.bit_range}}]);
-
-    {%- endif %}
-    end
-    {%- endif -%}
-
     {%- if child.get_property('hwset') %}
     // Hardware Set
     if ({{get_prop_value(child, index, 'hwset')}}) begin
@@ -343,6 +279,70 @@ end else begin
             // overwrite any updates with current value
             {{signal(child, index, 'q')}}[BIT] <= {{signal(child, index, 'q')}}[BIT];
         end
+    end
+    {%- endif %}
+
+    {%- if child.is_sw_readable and child.get_property('onread') %}
+    // Software read
+    if ({{signal(node)}}_sw_rd) begin
+
+    {%- if child.get_property('swmod') %}
+        {{signal(child, index, 'swmod')}} <= 1'b1;
+    {%- endif %}
+
+    {%- if child.get_property('onread') == OnReadType.rclr %}
+        {{signal(child, index, 'q')}} <= '0;
+
+    {%- elif child.get_property('onread') == OnReadType.rset %}
+        {{signal(child, index, 'q')}} <= '1;
+
+    {%- endif %}
+    end
+    {%- endif %}
+
+    {%- if child.is_sw_writable %}
+    // Software write
+    if ({{signal(node)}}_sw_wr
+        {%- if child.get_property('swwe') -%}
+        {{' '}}&& {{get_prop_value(child, index, 'swwe')}}
+        {%- elif child.get_property('swwel') -%}
+        {{' '}}&& !{{get_prop_value(child, index, 'swwel')}}
+        {%- endif -%}
+        ) begin
+
+
+    {%- if child.get_property('swmod') %}
+        {{signal(child, index, 'swmod')}} <= 1'b1;
+    {%- endif %}
+
+    {%- if child.get_property('onwrite') == OnWriteType.woset %}
+        {{signal(child, index, 'q')}} <=  sw_masked_data[{{child.bit_range}}] |  {{signal(child, index, 'q')}};
+
+    {%- elif child.get_property('onwrite') == OnWriteType.woclr %}
+        {{signal(child, index, 'q')}} <= ~sw_masked_data[{{child.bit_range}}] &  {{signal(child, index, 'q')}};
+
+    {%- elif child.get_property('onwrite') == OnWriteType.wot %}
+        {{signal(child, index, 'q')}} <=  sw_masked_data[{{child.bit_range}}] ^  {{signal(child, index, 'q')}};
+
+    {%- elif child.get_property('onwrite') == OnWriteType.wzs %}
+        {{signal(child, index, 'q')}} <= ~sw_masked_data[{{child.bit_range}}] |  {{signal(child, index, 'q')}};
+
+    {%- elif child.get_property('onwrite') == OnWriteType.wzc %}
+        {{signal(child, index, 'q')}} <=  sw_masked_data[{{child.bit_range}}] &  {{signal(child, index, 'q')}};
+
+    {%- elif child.get_property('onwrite') == OnWriteType.wzt %}
+        {{signal(child, index, 'q')}} <= ~sw_masked_data[{{child.bit_range}}] ^  {{signal(child, index, 'q')}};
+
+    {%- elif child.get_property('onwrite') == OnWriteType.wclr %}
+        {{signal(child, index, 'q')}} <= '0;
+
+    {%- elif child.get_property('onwrite') == OnWriteType.wset %}
+        {{signal(child, index, 'q')}} <= '1;
+
+    {%- else %}
+        {{signal(child, index, 'q')}} <=  sw_masked_data[{{child.bit_range}}] | ({{signal(child, index, 'q')}} & ~sw_mask[{{child.bit_range}}]);
+
+    {%- endif %}
     end
     {%- endif %}
 end
