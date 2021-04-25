@@ -38,12 +38,14 @@ def parse_args():
                         help='output director (default: %(default)s)')
     parser.add_argument('--top', '-t', type=str,
                         help='specify top level addrmap (default operation will use last defined global addrmap)')
+    parser.add_argument('--verbose', '-v', action='count', default=0,
+                        help='set logging verbosity')
 
     generator = parser.add_argument_group('generator options')
     generator.add_argument('--bus', '-b', type=str, default='native',
                            help='SW access bus type (default: %(default)s)')
     generator.add_argument('-O', type=overrideType, metavar='PROP=NEW',
-                           action='append',
+                           action='append', default=[],
                            help='advanced: override property output name (cannot use simulate with this option)')
 
     checker = parser.add_argument_group('post-generate checks')
@@ -94,26 +96,26 @@ def run_lint(modules, outdir):
             sys.exit(1)
 
 
-def compile_verilog(modules, outdir):
+def compile_verilog(modules, outdir, verbosity=0):
     for m in modules:
         rf_file = os.path.join(outdir, '{}_rf.sv'.format(m))
         tb_file = os.path.join(outdir, '{}_tb.cpp'.format(m))
 
         print('Info: Compiling {} ({})'.format(m, rf_file))
-        proc = subprocess.run(['verilator', '--cc', rf_file, '--exe', tb_file], check=True)
-        proc = subprocess.run(['make', '-C', 'obj_dir', '-f', 'V{}_rf.mk'.format(m), 'V{}_rf'.format(m)], check=True)
+        proc = subprocess.run(['verilator', '--cc', rf_file, '--exe', tb_file], check=True, capture_output=(verbosity < 2))
+        proc = subprocess.run(['make', '-C', 'obj_dir', '-f', 'V{}_rf.mk'.format(m), 'V{}_rf'.format(m)], check=True, capture_output=(verbosity < 2))
 
         if proc.returncode:
             print ("Error: make returned {}".format(proc.returncode))
             sys.exit(2)
 
 
-def simulate(modules):
+def simulate(modules, verbosity=0):
     for m in modules:
         bin_file = os.path.join('obj_dir', 'V{}_rf'.format(m))
 
         print('Info: Simulating {} ({})'.format(m, bin_file))
-        proc = subprocess.run([bin_file], check=True)
+        proc = subprocess.run([bin_file], check=True, capture_output=(verbosity < 1))
 
         if proc.returncode:
             print ("Error: sim returned {}".format(proc.returncode))
@@ -125,10 +127,10 @@ def simulate(modules):
 if __name__ == '__main__':
     args = parse_args()
     spec = compile_rdl(args.infile, incl_search_paths=args.I, top=args.top)
-    overrides = {k.prop: k.new for k in args.O or []}
+    overrides = {k.prop: k.new for k in args.O}
     blocks = generate(spec, args.outdir, signal_overrides=overrides, bus=args.bus)
     if args.lint:
         run_lint(blocks, args.outdir)
     if args.simulate:
-        compile_verilog(blocks, args.outdir)
-        simulate(blocks)
+        compile_verilog(blocks, args.outdir, verbosity=args.verbose)
+        simulate(blocks, verbosity=args.verbose)
