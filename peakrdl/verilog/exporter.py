@@ -53,26 +53,26 @@ class VerilogExporter:
             undefined=jj.StrictUndefined
         )
 
-        # Define variables used during export
-        RegNode.add_derived_property(self.bit_range)
-        RegNode.add_derived_property(self.full_array_dimensions)
-        RegNode.add_derived_property(self.full_array_ranges)
-        RegNode.add_derived_property(self.full_array_indexes)
-        RegNode.add_derived_property(self.has_intr)
-        RegNode.add_derived_property(self.has_halt)
-        FieldNode.add_derived_property(self.is_hw_writable)
-        FieldNode.add_derived_property(self.is_hw_readable)
-        FieldNode.add_derived_property(self.is_up_counter)
-        FieldNode.add_derived_property(self.is_down_counter)
-        FieldNode.add_derived_property(self.bit_range)
-        FieldNode.add_derived_property(self.bit_range_zero)
-        FieldNode.add_derived_property(self.full_array_ranges)
-        FieldNode.add_derived_property(self.full_array_dimensions)
-        FieldNode.add_derived_property(self.has_we)
-        FieldNode.add_derived_property(self.has_halt)
-        RegfileNode.add_derived_property(self.full_array_dimensions)
-        RegfileNode.add_derived_property(self.full_array_ranges)
-        SignalNode.add_derived_property(self.full_array_ranges)
+        # Define custom filters and tests
+        def add_filter(func):
+            self.jj_env.filters[func.__name__] = func
+        def add_test(func, name=None):
+            name = name or func.__name__.replace('is_', '')
+            self.jj_env.tests[name] = func
+
+        add_filter(self.full_array_dimensions)
+        add_filter(self.full_array_ranges)
+        add_filter(self.full_array_indexes)
+        add_filter(self.bit_range)
+        add_filter(self.bit_range_zero)
+
+        add_test(self.has_intr, 'intr')
+        add_test(self.has_halt, 'halt')
+        add_test(self.has_we,   'with_we')
+        add_test(self.is_hw_writable)
+        add_test(self.is_hw_readable)
+        add_test(self.is_up_counter)
+        add_test(self.is_down_counter)
 
         # Top-level node
         self.top = None
@@ -406,7 +406,7 @@ class VerilogExporter:
                 (node.get_property('incrvalue') or
                  node.get_property('incrwidth') or
                  node.get_property('incr') or
-                 not node.is_down_counter))
+                 not self.is_down_counter(node)))
 
 
     def is_down_counter(self, node) -> bool:
@@ -419,6 +419,7 @@ class VerilogExporter:
                  node.get_property('decr')))
 
 
+    # TODO: push back to systemrdlcompiler
     def is_hw_writable(self, node) -> bool:
         """
         Field is writable by hardware
@@ -429,6 +430,7 @@ class VerilogExporter:
                         AccessType.w, AccessType.w1)
 
 
+    # TODO: push back to systemrdlcompiler
     def is_hw_readable(self, node) -> bool:
         """
         Field is writable by hardware
@@ -453,7 +455,7 @@ class VerilogExporter:
         """
         Get multi-dimensional array indexing for reg/field
         """
-        indexes = itertools.product(*[list(range(k)) for k in node.full_array_dimensions])
+        indexes = itertools.product(*[list(range(k)) for k in self.full_array_dimensions(node)])
         return [''.join('[{}]'.format(k) for k in index) for index in indexes]
 
 
@@ -461,7 +463,7 @@ class VerilogExporter:
         """
         Get multi-dimensional array indexing for reg/field as SV ranges
         """
-        return fmt.format(''.join('[{}:0]'.format(dim-1) for dim in node.full_array_dimensions))
+        return fmt.format(''.join('[{}:0]'.format(dim-1) for dim in self.full_array_dimensions(node)))
 
 
     def _full_idx(self, node) -> str:
@@ -518,7 +520,7 @@ class VerilogExporter:
         if type(node) == FieldNode:
             return node.get_property('haltmask') or node.get_property('haltenable')
         for f in node.fields():
-            if f.has_halt:
+            if self.has_halt(f):
                 return True
         return False
 
@@ -537,5 +539,5 @@ class VerilogExporter:
 
         return ((node.get_property('we') is True) or    # explicit
                 (node.implements_storage and
-                 node.is_hw_writable and
+                 self.is_hw_writable(node) and
                  not node.get_property('intr')))        # interrupt unlikely to not want we
