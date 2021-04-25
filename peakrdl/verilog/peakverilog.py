@@ -80,6 +80,8 @@ def generate(root, outdir, signal_overrides=None, bus='native'):
         signal_overrides=signal_overrides,
         bus_type=bus,
     )
+    for m in modules:
+        print(" - Generated: " + ' '.join(os.path.join(outdir, '{}_{}'.format(m, k)) for k in ('rf.sv', 'tb.sv', 'tb.cpp')))
 
     return modules
 
@@ -94,6 +96,8 @@ def run_lint(modules, outdir):
         if proc.returncode:
             print ("Error: verilator returned {}".format(proc.returncode))
             sys.exit(1)
+        else:
+            print (" - Lint Passed")
 
 
 def compile_verilog(modules, outdir, verbosity=0):
@@ -108,6 +112,8 @@ def compile_verilog(modules, outdir, verbosity=0):
         if proc.returncode:
             print ("Error: make returned {}".format(proc.returncode))
             sys.exit(2)
+        else:
+            print(" - Compiled into ./obj_dir")
 
 
 def simulate(modules, verbosity=0):
@@ -121,7 +127,7 @@ def simulate(modules, verbosity=0):
             print ("Error: sim returned {}".format(proc.returncode))
             sys.exit(4)
         else:
-            print ("Info: simulation PASSED")
+            print (" - Simulation Passed")
 
 
 if __name__ == '__main__':
