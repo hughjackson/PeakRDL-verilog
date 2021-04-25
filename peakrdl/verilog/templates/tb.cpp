@@ -1,5 +1,5 @@
 {%- macro backdoor(node) -%}
-    {%- if node.is_hw_readable -%}
+    {%- if node is hw_readable -%}
         {{signal(node, '', 'q')}}
     {%- else -%}
         {{get_inst_name(top_node)}}_rf__DOT__{{signal(node, '', 'q')}}
@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
     cycle(top);
     std::cout << main_time << ": Testcase ({{signal(node)}} {{full_idx(node.parent)}}):\n";
 
-  {%- if node.is_hw_writable and not node.get_property('next') and not node.get_property('intr') and not node.get_property('sticky') %}
+  {%- if node is hw_writable and not node.get_property('next') and not node.get_property('intr') and not node.get_property('sticky') %}
     std::cout << main_time << ": \tHardware write test\n";
     for (int IDX = {{node.lsb}}; IDX <= {{node.msb}}; ++IDX) {
 

@@ -51,57 +51,57 @@ module {{get_inst_name(top_node)}}_tb #(
 {%- if isinstance(node, RegNode) %}
 
     // Register {{get_inst_name(node).upper()}}
-  {%- if node.has_intr %}
-    logic {{node.full_array_ranges}}        {{signal(node, '', 'intr')}};
+  {%- if node is intr %}
+    logic {{node|full_array_ranges}}        {{signal(node, '', 'intr')}};
   {%- endif %}
 
 {%- elif isinstance(node, FieldNode) -%}
   {%- if node.get_property('swmod') %}
-    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'swmod')}};
+    logic {{node.parent|full_array_ranges}}        {{signal(node, '', 'swmod')}};
   {%- endif %}
   {%- if node.get_property('swacc') %}
-    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'swacc')}};
+    logic {{node.parent|full_array_ranges}}        {{signal(node, '', 'swacc')}};
   {%- endif %}
   {%- if node.get_property('swwe') == True %}
-    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'swwe')}};
+    logic {{node.parent|full_array_ranges}}        {{signal(node, '', 'swwe')}};
   {%- elif node.get_property('swwel') == True %}
-    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'swwel')}};
+    logic {{node.parent|full_array_ranges}}        {{signal(node, '', 'swwel')}};
   {%- endif %}
   {%- if node.get_property('hwset') == True %}
-    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'hwset')}},
+    logic {{node.parent|full_array_ranges}}        {{signal(node, '', 'hwset')}},
   {%- endif %}
   {%- if node.get_property('hwclr') == True %}
-    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'hwclr')}},
+    logic {{node.parent|full_array_ranges}}        {{signal(node, '', 'hwclr')}},
   {%- endif %}
- {%- if node.is_hw_writable %}
-    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'we')}};
-    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'wel')}};
-    logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node, '', 'wdata')}};
+ {%- if node is hw_writable %}
+    logic {{node.parent|full_array_ranges}}        {{signal(node, '', 'we')}};
+    logic {{node.parent|full_array_ranges}}        {{signal(node, '', 'wel')}};
+    logic {{node.parent|full_array_ranges}}[{{node|bit_range}}] {{signal(node, '', 'wdata')}};
  {%- endif -%}
- {%- if node.is_hw_readable %}
-    logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node, '', 'q')}};
+ {%- if node is hw_readable %}
+    logic {{node.parent|full_array_ranges}}[{{node|bit_range}}] {{signal(node, '', 'q')}};
 
  {%- endif -%}
   {%- if node.get_property('intr') %}
-    logic {{node.parent.full_array_ranges}}[{{node.bit_range}}] {{signal(node, '', 'intr')}};
+    logic {{node.parent|full_array_ranges}}[{{node|bit_range}}] {{signal(node, '', 'intr')}};
   {%- endif -%}
- {%- if node.is_up_counter %}
-    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'incr')}};
+ {%- if node is up_counter %}
+    logic {{node.parent|full_array_ranges}}        {{signal(node, '', 'incr')}};
   {%- if node.get_property('incrwidth') %}
-    logic {{node.parent.full_array_ranges}}[{{node.get_property('incrwidth')}}-1:0] {{signal(node, '', 'incrvalue')}};
+    logic {{node.parent|full_array_ranges}}[{{node.get_property('incrwidth')}}-1:0] {{signal(node, '', 'incrvalue')}};
   {%- endif -%}
-    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'overflow')}};
-    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'incrthreshold')}};
-    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'incrsaturate')}};
+    logic {{node.parent|full_array_ranges}}        {{signal(node, '', 'overflow')}};
+    logic {{node.parent|full_array_ranges}}        {{signal(node, '', 'incrthreshold')}};
+    logic {{node.parent|full_array_ranges}}        {{signal(node, '', 'incrsaturate')}};
  {%- endif -%}
- {%- if node.is_down_counter %}
-    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'decr')}};
+ {%- if node is down_counter %}
+    logic {{node.parent|full_array_ranges}}        {{signal(node, '', 'decr')}};
   {%- if node.get_property('decrwidth') %}
-    logic {{node.parent.full_array_ranges}}[{{node.get_property('decrwidth')}}-1:0] {{signal(node, '', 'decrvalue')}};
+    logic {{node.parent|full_array_ranges}}[{{node.get_property('decrwidth')}}-1:0] {{signal(node, '', 'decrvalue')}};
   {%- endif -%}
-    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'underflow')}};
-    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'decrthreshold')}};
-    logic {{node.parent.full_array_ranges}}        {{signal(node, '', 'decrsaturate')}};
+    logic {{node.parent|full_array_ranges}}        {{signal(node, '', 'underflow')}};
+    logic {{node.parent|full_array_ranges}}        {{signal(node, '', 'decrthreshold')}};
+    logic {{node.parent|full_array_ranges}}        {{signal(node, '', 'decrsaturate')}};
  {%- endif -%}
 {%- endif -%}
 {%- endfor %}
@@ -149,17 +149,17 @@ module {{get_inst_name(top_node)}}_tb #(
 {%- if node.get_property('hwclr') == True %}
     {{signal(node, '', 'hwclr')}} = '0;
 {%- endif %}
-{%- if node.is_hw_writable %}
+{%- if node is hw_writable %}
         {{signal(node, '', 'wr')}} <= '0;
         {{signal(node, '', 'wdata')}} <= '0;
 {%- endif -%}
-{%- if node.is_up_counter %}
+{%- if node is up_counter %}
         {{signal(node, '', 'incr')}} <= '0;
     {%- if node.get_property('incrwidth') %}
         {{signal(node, '', 'incrvalue')}} <= '0;
     {%- endif -%}
 {%- endif -%}
-{%- if node.is_down_counter %}
+{%- if node is down_counter %}
         {{signal(node, '', 'decr')}} <= '0;
     {%- if node.get_property('decrwidth') %}
         {{signal(node, '', 'decrvalue')}} <= '0;
@@ -182,33 +182,33 @@ module {{get_inst_name(top_node)}}_tb #(
 {%- if isinstance(node, FieldNode) %}
         repeat(5) @(posedge clk);
         $display("%t: Testcase ({{signal(node)}} {{full_idx(node.parent)}}):", $time());
-    {%- if node.is_hw_writable %}
+    {%- if node is hw_writable %}
         $display("%t:\tHardware write test", $time());
         for (int IDX = {{node.lsb}}; IDX <= {{node.msb}}; ++IDX) begin
 
             `HW_WRITE( {{signal(node)}}, {{full_idx(node.parent)}}, (1 << (IDX-{{node.lsb}})) )
             `SW_READ( {{node.parent.absolute_address}} )
-            `CHECK_EQUAL(rdata[{{node.bit_range}}], (1 << (IDX-{{node.lsb}})))
+            `CHECK_EQUAL(rdata[{{node|bit_range}}], (1 << (IDX-{{node.lsb}})))
 
             `HW_WRITE( {{signal(node)}}, {{full_idx(node.parent)}}, 0 )
             `SW_READ( {{node.parent.absolute_address}} )
-            `CHECK_EQUAL(rdata[{{node.bit_range}}], 0)
+            `CHECK_EQUAL(rdata[{{node|bit_range}}], 0)
 
         end
     {%- endif -%}
-    {%- if node.is_up_counter and not node.get_property('incr') %}
+    {%- if node is up_counter and not node.get_property('incr') %}
         $display("%t:\tHardware increment test", $time());
         for (int IDX = 0; IDX <= 4; ++IDX) begin
 
             `SW_READ( {{node.parent.absolute_address}} )
-            temp = rdata[{{node.bit_range}}];
+            temp = rdata[{{node|bit_range}}];
 
         {%- if node.get_property('incrwidth') %}
             value = $urandom_range(0,2**{{node.get_property('incrwidth')}}-1);
             `HW_COUNT_VAL( {{signal(node)}}, {{full_idx(node.parent)}}, incr, value )
         {%- elif type(node.get_property('incrvalue')) == type(node) %}
             `SW_READ( {{node.get_property('incrvalue').parent.absolute_address}} )
-            value = rdata[{{node.get_property('incrvalue').bit_range}}];
+            value = rdata[{{node.get_property('incrvalue')|bit_range}}];
             `HW_COUNT( {{signal(node)}}, {{full_idx(node.parent)}}, incr )
         {%- else %}
             value = {{node.get_property('incrvalue', default=1)}};
@@ -221,7 +221,7 @@ module {{get_inst_name(top_node)}}_tb #(
             // saturate
         {%- if type(node.get_property('incrsaturate')) == type(node) %}
             `SW_READ( {{node.get_property('incrsaturate').parent.absolute_address}} )
-            value = rdata[{{node.get_property('incrsaturate').bit_range}}];
+            value = rdata[{{node.get_property('incrsaturate')|bit_range}}];
         {%- elif node.get_property('incrsaturate') %}
             value = {{node.get_property('incrvalue', default=2**node.width-1)}};
         {%- endif %}
@@ -234,7 +234,7 @@ module {{get_inst_name(top_node)}}_tb #(
             // threshold
         {%- if type(node.get_property('incrthreshold')) == type(node) %}
             `SW_READ( {{node.get_property('incrthreshold').parent.absolute_address}} )
-            value = rdata[{{node.get_property('incrthreshold').bit_range}}];
+            value = rdata[{{node.get_property('incrthreshold')|bit_range}}];
         {%- elif node.get_property('incrthreshold') %}
             value = {{node.get_property('incrvalue', default=2**node.width-1)}};
         {%- endif %}
@@ -248,23 +248,23 @@ module {{get_inst_name(top_node)}}_tb #(
         {%- endif %}
 
             `SW_READ( {{node.parent.absolute_address}} )
-            `CHECK_EQUAL(rdata[{{node.bit_range}}], temp[{{node.width}}-1:0])
+            `CHECK_EQUAL(rdata[{{node|bit_range}}], temp[{{node.width}}-1:0])
 
         end
     {%- endif -%}
-    {%- if node.is_down_counter %}
+    {%- if node is down_counter %}
         $display("%t:\tHardware decrement test", $time());
         for (int IDX = 0; IDX <= 4; ++IDX) begin
 
             `SW_READ( {{node.parent.absolute_address}} )
-            temp = rdata[{{node.bit_range}}];
+            temp = rdata[{{node|bit_range}}];
 
         {%- if node.get_property('decrwidth') %}
             value = $urandom_range(0,2**{{node.get_property('decrwidth')}}-1);
             `HW_COUNT_VAL( {{signal(node)}}, {{full_idx(node.parent)}}, decr, value )
         {%- elif type(node.get_property('decrvalue')) == type(node) %}
             `SW_READ( {{node.get_property('decrvalue').parent.absolute_address}} )
-            value = rdata[{{node.get_property('decrvalue').bit_range}}];
+            value = rdata[{{node.get_property('decrvalue')|bit_range}}];
             `HW_COUNT( {{signal(node)}}, {{full_idx(node.parent)}}, decr )
         {%- else %}
             value = {{node.get_property('decrvalue', default=1)}};
@@ -277,7 +277,7 @@ module {{get_inst_name(top_node)}}_tb #(
             // saturate
         {%- if type(node.get_property('decrsaturate')) == type(node) %}
             `SW_READ( {{node.get_property('decrsaturate').parent.absolute_address}} )
-            value = rdata[{{node.get_property('decrsaturate').bit_range}}];
+            value = rdata[{{node.get_property('decrsaturate')|bit_range}}];
         {%- elif node.get_property('decrsaturate') %}
             value = {{node.get_property('decrvalue', default=0)}};
         {%- endif %}
@@ -290,7 +290,7 @@ module {{get_inst_name(top_node)}}_tb #(
             // threshold
         {%- if type(node.get_property('decrthreshold')) == type(node) %}
             `SW_READ( {{node.get_property('decrthreshold').parent.absolute_address}} )
-            value = rdata[{{node.get_property('decrthreshold').bit_range}}];
+            value = rdata[{{node.get_property('decrthreshold')|bit_range}}];
         {%- elif node.get_property('decrthreshold') %}
             value = {{node.get_property('decrvalue', default=0)}};
         {%- endif %}
@@ -304,16 +304,16 @@ module {{get_inst_name(top_node)}}_tb #(
         {%- endif %}
 
             `SW_READ( {{node.parent.absolute_address}} )
-            `CHECK_EQUAL(rdata[{{node.bit_range}}], temp[{{node.width}}-1:0])
+            `CHECK_EQUAL(rdata[{{node|bit_range}}], temp[{{node.width}}-1:0])
 
         end
     {%- endif -%}
-    {%- if node.is_hw_readable and node.is_sw_writable %}
+    {%- if node is hw_readable and node.is_sw_writable %}
         $display("%t:\tSoftware write (hardware read) test", $time());
         for (int IDX = {{node.lsb}}; IDX <= {{node.msb}}; ++IDX) begin
 
             temp = '0;
-            temp[{{node.bit_range}}] = {{signal(node, '', 'q')}}{{full_idx(node.parent)}};
+            temp[{{node|bit_range}}] = {{signal(node, '', 'q')}}{{full_idx(node.parent)}};
         {%- if node.get_property('onwrite') == OnWriteType.woset %}
             temp[IDX] = 1;
             value = temp;
@@ -347,10 +347,10 @@ module {{get_inst_name(top_node)}}_tb #(
         {%- endif %}
 
             `SW_WRITE( {{node.parent.absolute_address}}, (1 << IDX) )
-            #1 `CHECK_EQUAL({{signal(node, '', 'q')}}{{full_idx(node.parent)}}, temp[{{node.bit_range}}])
+            #1 `CHECK_EQUAL({{signal(node, '', 'q')}}{{full_idx(node.parent)}}, temp[{{node|bit_range}}])
 
             `SW_WRITE( {{node.parent.absolute_address}}, 0 )
-            #1 `CHECK_EQUAL({{signal(node, '', 'q')}}{{full_idx(node.parent)}}, value[{{node.bit_range}}])
+            #1 `CHECK_EQUAL({{signal(node, '', 'q')}}{{full_idx(node.parent)}}, value[{{node|bit_range}}])
 
         end
     {%- endif -%}
@@ -360,7 +360,7 @@ module {{get_inst_name(top_node)}}_tb #(
 
             temp = '0;
             `SW_READ( {{node.parent.absolute_address}} )
-            temp[{{node.bit_range}}] = rdata[{{node.bit_range}}];
+            temp[{{node|bit_range}}] = rdata[{{node|bit_range}}];
         {%- if node.get_property('onwrite') == OnWriteType.woset %}
             temp[IDX] = 1;
             value = temp;
@@ -395,11 +395,11 @@ module {{get_inst_name(top_node)}}_tb #(
 
             `SW_WRITE( {{node.parent.absolute_address}}, (1 << IDX) )
             `SW_READ( {{node.parent.absolute_address}} )
-            `CHECK_EQUAL(rdata[{{node.bit_range}}], temp[{{node.bit_range}}])
+            `CHECK_EQUAL(rdata[{{node|bit_range}}], temp[{{node|bit_range}}])
 
             `SW_WRITE( {{node.parent.absolute_address}}, 0 )
             `SW_READ( {{node.parent.absolute_address}} )
-            `CHECK_EQUAL(rdata[{{node.bit_range}}], value[{{node.bit_range}}])
+            `CHECK_EQUAL(rdata[{{node|bit_range}}], value[{{node|bit_range}}])
 
         end
     {%- endif -%}

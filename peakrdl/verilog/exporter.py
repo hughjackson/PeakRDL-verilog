@@ -53,26 +53,25 @@ class VerilogExporter:
             undefined=jj.StrictUndefined
         )
 
-        # Define variables used during export
-        RegNode.add_derived_property(self.bit_range)
-        RegNode.add_derived_property(self.full_array_dimensions)
-        RegNode.add_derived_property(self.full_array_ranges)
-        RegNode.add_derived_property(self.full_array_indexes)
-        RegNode.add_derived_property(self.has_intr)
-        RegNode.add_derived_property(self.has_halt)
-        FieldNode.add_derived_property(self.is_hw_writable)
-        FieldNode.add_derived_property(self.is_hw_readable)
-        FieldNode.add_derived_property(self.is_up_counter)
-        FieldNode.add_derived_property(self.is_down_counter)
-        FieldNode.add_derived_property(self.bit_range)
-        FieldNode.add_derived_property(self.bit_range_zero)
-        FieldNode.add_derived_property(self.full_array_ranges)
-        FieldNode.add_derived_property(self.full_array_dimensions)
-        FieldNode.add_derived_property(self.has_we)
-        FieldNode.add_derived_property(self.has_halt)
-        RegfileNode.add_derived_property(self.full_array_dimensions)
-        RegfileNode.add_derived_property(self.full_array_ranges)
-        SignalNode.add_derived_property(self.full_array_ranges)
+        # Define custom filters and tests
+        def add_filter(func):
+            self.jj_env.filters[func.__name__] = func
+        def add_test(func, name=None):
+            name = name or func.__name__.replace('is_', '')
+            self.jj_env.tests[name] = func
+
+        add_filter(self.full_array_dimensions)
+        add_filter(self.full_array_ranges)
+        add_filter(self.full_array_indexes)
+        add_filter(self.bit_range)
+
+        add_test(self.has_intr, 'intr')
+        add_test(self.has_halt, 'halt')
+        add_test(self.has_we,   'with_we')
+        add_test(self.is_hw_writable)
+        add_test(self.is_hw_readable)
+        add_test(self.is_up_counter)
+        add_test(self.is_down_counter)
 
         # Top-level node
         self.top = None
@@ -163,12 +162,6 @@ class VerilogExporter:
                 'signal': self._get_signal_name,
                 'full_idx': self._full_idx,
                 'get_inst_name': self._get_inst_name,
-                'get_field_access': self._get_field_access,
-                'get_array_address_offset_expr': self._get_array_address_offset_expr,
-                'get_bus_width': self._get_bus_width,
-                'get_mem_access': self._get_mem_access,
-                'roundup_to': self._roundup_to,
-                'roundup_pow2': self._roundup_pow2,
                 'get_prop_value': self._get_prop_value,
                 'get_counter_value': self._get_counter_value,
             }
@@ -198,108 +191,6 @@ class VerilogExporter:
         return node.inst_name
 
 
-    def _get_field_access(self, field: FieldNode) -> str:
-        """
-        Get field's Verilog access string
-        """
-        sw = field.get_property("sw")
-        onread = field.get_property("onread")
-        onwrite = field.get_property("onwrite")
-
-        if sw == AccessType.rw:
-            if (onwrite is None) and (onread is None):
-                return "RW"
-            elif (onread == OnReadType.rclr) and (onwrite == OnWriteType.woset):
-                return "W1SRC"
-            elif (onread == OnReadType.rclr) and (onwrite == OnWriteType.wzs):
-                return "W0SRC"
-            elif (onread == OnReadType.rclr) and (onwrite == OnWriteType.wset):
-                return "WSRC"
-            elif (onread == OnReadType.rset) and (onwrite == OnWriteType.woclr):
-                return "W1CRS"
-            elif (onread == OnReadType.rset) and (onwrite == OnWriteType.wzc):
-                return "W0CRS"
-            elif (onread == OnReadType.rset) and (onwrite == OnWriteType.wclr):
-                return "WCRS"
-            elif onwrite == OnWriteType.woclr:
-                return "W1C"
-            elif onwrite == OnWriteType.woset:
-                return "W1S"
-            elif onwrite == OnWriteType.wot:
-                return "W1T"
-            elif onwrite == OnWriteType.wzc:
-                return "W0C"
-            elif onwrite == OnWriteType.wzs:
-                return "W0S"
-            elif onwrite == OnWriteType.wzt:
-                return "W0T"
-            elif onwrite == OnWriteType.wclr:
-                return "WC"
-            elif onwrite == OnWriteType.wset:
-                return "WS"
-            elif onread == OnReadType.rclr:
-                return "WRC"
-            elif onread == OnReadType.rset:
-                return "WRS"
-            else:
-                return "RW"
-
-        elif sw == AccessType.r:
-            if onread is None:
-                return "RO"
-            elif onread == OnReadType.rclr:
-                return "RC"
-            elif onread == OnReadType.rset:
-                return "RS"
-            else:
-                return "RO"
-
-        elif sw == AccessType.w:
-            if onwrite is None:
-                return "WO"
-            elif onwrite == OnWriteType.wclr:
-                return "WOC"
-            elif onwrite == OnWriteType.wset:
-                return "WOS"
-            else:
-                return "WO"
-
-        elif sw == AccessType.rw1:
-            return "W1"
-
-        elif sw == AccessType.w1:
-            return "WO1"
-
-        else: # na
-            return "NOACCESS"
-
-
-    def _get_mem_access(self, mem: MemNode) -> str:
-        sw = mem.get_property("sw")
-        if sw == AccessType.r:
-            return "R"
-        else:
-            return "RW"
-
-
-    def _get_array_address_offset_expr(self, node: AddressableNode) -> str:
-        """
-        Returns an expression to calculate the address offset
-        for example, a 4-dimensional array allocated as:
-            [A][B][C][D] @ X += Y
-        results in:
-            X + i0*B*C*D*Y + i1*C*D*Y + i2*D*Y + i3*Y
-        """
-        s = "'h%x" % node.raw_address_offset
-        if node.is_array:
-            for i in range(len(node.array_dimensions)):
-                m = node.array_stride
-                for j in range(i+1, len(node.array_dimensions)):
-                    m *= node.array_dimensions[j]
-                s += " + i%d*'h%x" % (i, m)
-        return s
-
-
     def _get_signal_name(self, node: Node, index: str = '', prop: str = '') -> str:
         """
         Returns unique-in-addrmap name for signals
@@ -313,33 +204,6 @@ class VerilogExporter:
             return "{}_{}{}".format(prefix, suffix, index)
         else:
             return "{}{}".format(prefix, index)
-
-
-    def _get_bus_width(self, node: Node) -> int:
-        """
-        Returns group-like node's bus width (in bytes)
-        """
-        width = self.bus_width_db[node.get_path()]
-
-        # Divide by 8, rounded up
-        if width % 8:
-            return width // 8 + 1
-        else:
-            return width // 8
-
-
-    def _roundup_to(self, x: int, n: int) -> int:
-        """
-        Round x up to the nearest n
-        """
-        if x % n:
-            return (x//n + 1) * n
-        else:
-            return (x//n) * n
-
-
-    def _roundup_pow2(self, x):
-        return 1<<(x-1).bit_length()
 
 
     # get property value where:
@@ -406,7 +270,7 @@ class VerilogExporter:
                 (node.get_property('incrvalue') or
                  node.get_property('incrwidth') or
                  node.get_property('incr') or
-                 not node.is_down_counter))
+                 not self.is_down_counter(node)))
 
 
     def is_down_counter(self, node) -> bool:
@@ -419,6 +283,7 @@ class VerilogExporter:
                  node.get_property('decr')))
 
 
+    # TODO: push back to systemrdlcompiler
     def is_hw_writable(self, node) -> bool:
         """
         Field is writable by hardware
@@ -429,6 +294,7 @@ class VerilogExporter:
                         AccessType.w, AccessType.w1)
 
 
+    # TODO: push back to systemrdlcompiler
     def is_hw_readable(self, node) -> bool:
         """
         Field is writable by hardware
@@ -453,7 +319,7 @@ class VerilogExporter:
         """
         Get multi-dimensional array indexing for reg/field
         """
-        indexes = itertools.product(*[list(range(k)) for k in node.full_array_dimensions])
+        indexes = itertools.product(*[list(range(k)) for k in self.full_array_dimensions(node)])
         return [''.join('[{}]'.format(k) for k in index) for index in indexes]
 
 
@@ -461,7 +327,7 @@ class VerilogExporter:
         """
         Get multi-dimensional array indexing for reg/field as SV ranges
         """
-        return fmt.format(''.join('[{}:0]'.format(dim-1) for dim in node.full_array_dimensions))
+        return fmt.format(''.join('[{}:0]'.format(dim-1) for dim in self.full_array_dimensions(node)))
 
 
     def _full_idx(self, node) -> str:
@@ -484,21 +350,17 @@ class VerilogExporter:
             return self._full_idx_list(node.parent) + (list(node.current_idx or []))
 
 
-    def bit_range(self, node, fmt='{msb:2}:{lsb:2}') -> str:
+    def bit_range(self, node, fmt='{msb:2}:{lsb:2}', from_zero=False) -> str:
         """
         Formatted bit range for field
         """
         if type(node) == RegNode:
             return fmt.format(lsb=0, msb=node.size*8-1)
         else:
-            return fmt.format(lsb=node.lsb, msb=node.msb)
-
-
-    def bit_range_zero(self, node, fmt='{msb:2}: 0') -> str:
-        """
-        Formatted bit range for field
-        """
-        return fmt.format(msb=node.width-1)
+            if from_zero:
+                return fmt.format(lsb=0, msb=node.width-1)
+            else:
+                return fmt.format(lsb=node.lsb, msb=node.msb)
 
 
     def has_intr(self, node: RegNode) -> bool:
@@ -518,7 +380,7 @@ class VerilogExporter:
         if type(node) == FieldNode:
             return node.get_property('haltmask') or node.get_property('haltenable')
         for f in node.fields():
-            if f.has_halt:
+            if self.has_halt(f):
                 return True
         return False
 
@@ -537,5 +399,5 @@ class VerilogExporter:
 
         return ((node.get_property('we') is True) or    # explicit
                 (node.implements_storage and
-                 node.is_hw_writable and
+                 self.is_hw_writable(node) and
                  not node.get_property('intr')))        # interrupt unlikely to not want we
