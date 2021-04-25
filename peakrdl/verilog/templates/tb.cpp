@@ -32,6 +32,8 @@
             top->valid = 1; \
             top->read = 1; \
             top->addr = ADDR; \
+            top->eval(); \
+            rdata = top->rdata; \
             cycle(top); \
             top->valid = 0;
 
@@ -64,6 +66,7 @@ void cycle(V{{get_inst_name(top_node)}}_rf *top) {
 int main(int argc, char** argv) {
     Verilated::commandArgs(argc, argv);   // Remember args
     Verilated::traceEverOn(true);
+    int rdata;
 
     top = new V{{get_inst_name(top_node)}}_rf;             // Create instance
 
@@ -90,12 +93,24 @@ int main(int argc, char** argv) {
     for (int IDX = {{node.lsb}}; IDX <= {{node.msb}}; ++IDX) {
 
         HW_WRITE_WE( {{signal(node)}}, {{full_idx(node.parent)}}, (1 << (IDX-{{node.lsb}})) )
-        //SW_READ( {{node.parent.absolute_address}} )
-        //CHECK_EQUAL(RANGE(top->rdata, {{node.width}}, {{node.lsb}}), (1 << (IDX-{{node.lsb}})))
         CHECK_EQUAL(top->{{backdoor(node)}}, (1 << (IDX-{{node.lsb}})))
 
         HW_WRITE_WE( {{signal(node)}}, {{full_idx(node.parent)}}, 0 )
         CHECK_EQUAL(top->{{backdoor(node)}}, 0)
+    }
+  {%- endif -%}
+
+  {%- if node.is_sw_readable %}
+    std::cout << main_time << ": \tSoftware read test\n";
+    for (int IDX = {{node.lsb}}; IDX <= {{node.msb}}; ++IDX) {
+
+        top->{{backdoor(node)}} = (1 << (IDX-{{node.lsb}}));
+    {%- if node is hw_writable and not node.get_property('next') %}
+        HW_WRITE( {{signal(node)}}, {{full_idx(node.parent)}}, (1 << (IDX-{{node.lsb}})) )
+    {%- endif %}
+        cycle(top);
+        SW_READ( {{node.parent.absolute_address}} )
+        CHECK_EQUAL(RANGE(rdata, {{node.width}}, {{node.lsb}}), (1 << (IDX-{{node.lsb}})))
     }
   {%- endif -%}
 
