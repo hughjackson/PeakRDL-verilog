@@ -17,7 +17,7 @@ addrmap sw_access {
         field {onwrite=wzt;   } fwzt;
         field {onwrite=wclr;  } fwclr;
         field {onwrite=wset;  } fwset;
-        field {singlepulse; fieldwidth=1;} single=0;
+        field {singlepulse; fieldwidth=1; sw=w;} single=0;
     } onreadwrite;
 
     reg {
