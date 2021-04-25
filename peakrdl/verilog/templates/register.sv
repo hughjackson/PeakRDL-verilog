@@ -52,7 +52,7 @@ assign {{signal(child, index, 'xored')}} = ^ {{signal(child, index, 'q')}};
 
 {%- if child.get_property('intr') %}
 {%- if child.get_property('intr type') != InterruptType.level %}
-logic [{{child|bit_range_zero}}] {{signal(child, '', 'wdata')}}_d;
+logic [{{child|bit_range(from_zero=True)}}] {{signal(child, '', 'wdata')}}_d;
 //! interrupt detection state
 always_ff @ (posedge clk) begin
     {{signal(child, '', 'wdata')}}_d <= {{signal(child, index, 'wdata')}};
@@ -198,7 +198,7 @@ end else begin
         {{signal(child, index, 'overflow')}} <= 1'b0;
         {{signal(child, index, 'incrsaturate')}} <= 1'b0;
         if (next[{{child.width}}] ||
-            (next[{{child|bit_range_zero}}] >= {{get_prop_value(child, index, 'incrsaturate',
+            (next[{{child|bit_range(from_zero=True)}}] >= {{get_prop_value(child, index, 'incrsaturate',
                                                             hw_on_true=False, default=-1,
                                                             width=child.width)}})) begin
             {{signal(child, index, 'q')}} <= {{get_prop_value(child, index, 'incrsaturate',
@@ -213,7 +213,7 @@ end else begin
         // threshold
         {{signal(child, index, 'incrthreshold')}} <= 1'b0;
         if (next[{{child.width}}] ||
-            (next[{{child|bit_range_zero}}] >= {{get_prop_value(child, index, 'incrthreshold',
+            (next[{{child|bit_range(from_zero=True)}}] >= {{get_prop_value(child, index, 'incrthreshold',
                                                             hw_on_true=False, default=-1,
                                                             width=child.width)}})) begin
             {{signal(child, index, 'incrthreshold')}} <= 1'b1;
@@ -240,7 +240,7 @@ end else begin
         {{signal(child, index, 'underflow')}} <= 1'b0;
         {{signal(child, index, 'decrsaturate')}} <= 1'b0;
         if (next[{{child.width}}] ||
-            (next[{{child|bit_range_zero}}] <= {{get_prop_value(child, index, 'decrsaturate',
+            (next[{{child|bit_range(from_zero=True)}}] <= {{get_prop_value(child, index, 'decrsaturate',
                                                             hw_on_true=False, default=0,
                                                             width=child.width)}})) begin
             {{signal(child, index, 'q')}} <= {{get_prop_value(child, index, 'decrsaturate',
@@ -255,7 +255,7 @@ end else begin
         // threshold
         {{signal(child, index, 'decrthreshold')}} <= 1'b0;
         if (next[{{child.width}}] ||
-            (next[{{child|bit_range_zero}}] <= {{get_prop_value(child, index, 'decrthreshold',
+            (next[{{child|bit_range(from_zero=True)}}] <= {{get_prop_value(child, index, 'decrthreshold',
                                                             hw_on_true=False, default=0,
                                                             width=child.width)}})) begin
             {{signal(child, index, 'decrthreshold')}} <= 1'b1;

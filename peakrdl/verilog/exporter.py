@@ -64,7 +64,6 @@ class VerilogExporter:
         add_filter(self.full_array_ranges)
         add_filter(self.full_array_indexes)
         add_filter(self.bit_range)
-        add_filter(self.bit_range_zero)
 
         add_test(self.has_intr, 'intr')
         add_test(self.has_halt, 'halt')
@@ -486,21 +485,17 @@ class VerilogExporter:
             return self._full_idx_list(node.parent) + (list(node.current_idx or []))
 
 
-    def bit_range(self, node, fmt='{msb:2}:{lsb:2}') -> str:
+    def bit_range(self, node, fmt='{msb:2}:{lsb:2}', from_zero=False) -> str:
         """
         Formatted bit range for field
         """
         if type(node) == RegNode:
             return fmt.format(lsb=0, msb=node.size*8-1)
         else:
-            return fmt.format(lsb=node.lsb, msb=node.msb)
-
-
-    def bit_range_zero(self, node, fmt='{msb:2}: 0') -> str:
-        """
-        Formatted bit range for field
-        """
-        return fmt.format(msb=node.width-1)
+            if from_zero:
+                return fmt.format(lsb=0, msb=node.width-1)
+            else:
+                return fmt.format(lsb=node.lsb, msb=node.msb)
 
 
     def has_intr(self, node: RegNode) -> bool:

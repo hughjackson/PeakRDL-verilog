@@ -40,10 +40,10 @@ module {{get_inst_name(top_node)}}_rf #(
   {%- endif %}
 
   {%- if node.get_property('intr') %}
-    output logic {{node.parent|full_array_ranges}}[{{node|bit_range_zero}}] {{signal(node, '', 'intr')}}, //! Individual interrupt line for {{get_inst_name(node).upper()}}
+    output logic {{node.parent|full_array_ranges}}[{{node|bit_range(from_zero=True)}}] {{signal(node, '', 'intr')}}, //! Individual interrupt line for {{get_inst_name(node).upper()}}
   {%- endif -%}
   {%- if node is halt %}
-    output logic {{node.parent|full_array_ranges}}[{{node|bit_range_zero}}] {{signal(node, '', 'halt')}}, //! Individual halt line for {{get_inst_name(node).upper()}}
+    output logic {{node.parent|full_array_ranges}}[{{node|bit_range(from_zero=True)}}] {{signal(node, '', 'halt')}}, //! Individual halt line for {{get_inst_name(node).upper()}}
   {%- endif -%}
 
   {%- if node.get_property('hwset') == True %}
@@ -61,11 +61,11 @@ module {{get_inst_name(top_node)}}_rf #(
   {%- endif %}
 
   {%- if node is hw_writable and not node.get_property('next') %}
-    input  logic {{node.parent|full_array_ranges}}[{{node|bit_range_zero}}] {{signal(node, '', 'wdata')}},          //! HW write data
+    input  logic {{node.parent|full_array_ranges}}[{{node|bit_range(from_zero=True)}}] {{signal(node, '', 'wdata')}},          //! HW write data
   {%- endif -%}
 
   {%- if node is hw_readable %}
-    output logic {{node.parent|full_array_ranges}}[{{node|bit_range_zero}}] {{signal(node, '', 'q')}},              //! Current field value
+    output logic {{node.parent|full_array_ranges}}[{{node|bit_range(from_zero=True)}}] {{signal(node, '', 'q')}},              //! Current field value
   {%- endif -%}
 
   {%- if node.get_property('anded') %}
@@ -128,9 +128,9 @@ module {{get_inst_name(top_node)}}_rf #(
  {%- if isinstance(node, FieldNode) -%}
 
   {%- if not node is hw_readable %}
-    logic       {{node.parent|full_array_ranges}}[{{node|bit_range_zero}}] {{signal(node, '', 'q')}};
+    logic       {{node.parent|full_array_ranges}}[{{node|bit_range(from_zero=True)}}] {{signal(node, '', 'q')}};
   {%- endif %}
-    logic       {{node.parent|full_array_ranges}}[{{node|bit_range_zero}}] {{signal(node, '', 'next')}};
+    logic       {{node.parent|full_array_ranges}}[{{node|bit_range(from_zero=True)}}] {{signal(node, '', 'next')}};
 
   {%- if not node.get_property('anded') %}
     logic {{node.parent|full_array_ranges}}        {{signal(node, '', 'anded')}};
