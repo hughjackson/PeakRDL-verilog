@@ -17,12 +17,13 @@ class overrideType:
         self.prop = s[0]
         self.new = s[1]
 
+
     def __str__(self):
         return "{} => {}".format(self.prop, self.new)
 
+
     def __repr__(self):
         return "overrideType('{}={}')".format(self.prop, self.new)
-
 
 
 def parse_args():
@@ -30,40 +31,45 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Generate Verilog output from systemRDL')
     parser.add_argument('infile', metavar='file', type=str,
                         help='input systemRDL file')
-    parser.add_argument('--outdir', '-o', type=str, default='.',
-                        help='output director (default: %(default)s)')
 
     parser.add_argument('-I', type=str, action='append', metavar='dir',
-                        help='Add dir to include search path')
-    parser.add_argument('--bus', '-b', type=str, default='native',
-                        help='SW access bus type (default: %(default)s)')
-    parser.add_argument('--override', '-O', type=overrideType, metavar='PROP=NEW',
-                        action='append', default=[],
-                        help='Advanced: Override property output name (cannot use simulate with this option)')
+                        help='add dir to include search path')
+    parser.add_argument('--outdir', '-o', type=str, default='.',
+                        help='output director (default: %(default)s)')
+    parser.add_argument('--top', '-t', type=str,
+                        help='specify top level addrmap (default operation will use last defined global addrmap)')
 
-    parser.add_argument('--lint', '-l', action='store_true',
-                        help='Run verilator lint on the generated verilog')
-    parser.add_argument('--simulate', '-s', action='store_true',
-                        help='Run verilator simulation on the generated verilog')
+    generator = parser.add_argument_group('generator options')
+    generator.add_argument('--bus', '-b', type=str, default='native',
+                           help='SW access bus type (default: %(default)s)')
+    generator.add_argument('-O', type=overrideType, metavar='PROP=NEW',
+                           action='append',
+                           help='advanced: override property output name (cannot use simulate with this option)')
+
+    checker = parser.add_argument_group('post-generate checks')
+    checker.add_argument('--lint', '-l', action='store_true',
+                         help='run verilator lint on the generated verilog')
+    checker.add_argument('--simulate', '-s', action='store_true',
+                         help='run verilator simulation on the generated verilog')
 
     temp = parser.parse_args()
 
-    if temp.override and temp.simulate:
+    if temp.O and temp.simulate:
         parser.print_usage()
         print("{}: argument --override/-O: --simulate not currently supported when using override".format(os.path.basename(__file__)))
-        exit(1)
+        sys.exit(1)
 
     return temp
 
 
-def compile_rdl(infile, incl_search_paths=[]):
+def compile_rdl(infile, incl_search_paths=None, top=None):
     '''compile the rdl'''
     rdlc = RDLCompiler()
     rdlc.compile_file(infile, incl_search_paths=incl_search_paths)
-    return rdlc.elaborate().top
+    return rdlc.elaborate(top_def_name=top).top
 
 
-def generate(root, outdir, signal_overrides={}, bus='native'):
+def generate(root, outdir, signal_overrides=None, bus='native'):
     '''generate the verilog'''
     print('Info: Generating verilog for {} in {}'.format(root.inst_name, outdir))
     modules = VerilogExporter().export(
@@ -118,8 +124,8 @@ def simulate(modules):
 
 if __name__ == '__main__':
     args = parse_args()
-    spec = compile_rdl(args.infile, args.I)
-    overrides = {k.prop: k.new for k in args.override}
+    spec = compile_rdl(args.infile, incl_search_paths=args.I, top=args.top)
+    overrides = {k.prop: k.new for k in args.O or []}
     blocks = generate(spec, args.outdir, signal_overrides=overrides, bus=args.bus)
     if args.lint:
         run_lint(blocks, args.outdir)
