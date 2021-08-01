@@ -14,7 +14,7 @@ setuptools.setup(
     name="peakrdl-verilog",
     version=version,
     author="Hugh Jackson",
-    description="Generate veriog register module from compiled SystemRDL input",
+    description="Generate verilog register module from compiled SystemRDL input",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/SystemRDL/PeakRDL-verilog",
