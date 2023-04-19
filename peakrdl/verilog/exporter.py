@@ -23,13 +23,13 @@ class VerilogExporter:
             Additional context variables to load into the template namespace.
         """
         user_template_dir = kwargs.pop("user_template_dir", None)
-        self.user_template_context = kwargs.pop("user_template_context", dict())
+        self.user_template_context = kwargs.pop("user_template_context", {})
         self.signal_overrides = {}
         self.strict = False # strict RDL rules rather than helpful impliciti behaviour
 
         # Check for stray kwargs
         if kwargs:
-            raise TypeError("got an unexpected keyword argument '%s'" % list(kwargs.keys())[0])
+            raise TypeError("got an unexpected keyword argument '%s'" % list(kwargs.keys())[0]) #pylint: disable=consider-using-f-string
 
         if user_template_dir:
             loader = jj.ChoiceLoader([
@@ -105,24 +105,23 @@ class VerilogExporter:
         bus_type: str
             bus type for the SW interface (default: native)
         """
-        self.signal_overrides = kwargs.pop("signal_overrides") or dict()
+        self.signal_overrides = kwargs.pop("signal_overrides") or {}
         bus_type = kwargs.pop("bus_type", "native")
 
         try:
-            with open(os.path.join(os.path.dirname(__file__), "busses", "{}.ports.sv".format(bus_type))) as f:
+            with open(os.path.join(os.path.dirname(__file__), "busses", f"{bus_type}.ports.sv"),encoding="utf8") as f:
                 sw_ports = f.read()
-            with open(os.path.join(os.path.dirname(__file__), "busses", "{}.impl.sv".format(bus_type))) as f:
+            with open(os.path.join(os.path.dirname(__file__), "busses", f"{bus_type}.impl.sv"),encoding="utf8") as f:
                 sw_impl = f.read()
         except FileNotFoundError as e:
-            raise TypeError("didn't recognise bus_type '{}'. Please check for typos.".format(bus_type)) from e
+            raise TypeError(f"didn't recognise bus_type '{bus_type}'. Please check for typos.") from e
 
         if type(self.signal_overrides) != dict:
-            raise TypeError("got an unexpected signal_overrides argument of type {} instead of dict".format(
-                                type(self.signal_overrides)))
+            raise TypeError(f"got an unexpected signal_overrides argument of type {type(self.signal_overrides)} instead of dict")
 
         # Check for stray kwargs
         if kwargs:
-            raise TypeError("got an unexpected keyword argument '%s'" % list(kwargs.keys())[0])
+            raise TypeError("got an unexpected keyword argument '%s'" % list(kwargs.keys())[0]) #pylint: disable=consider-using-f-string
 
         # If it is the root node, skip to top addrmap
         if isinstance(node, RootNode):
@@ -204,9 +203,9 @@ class VerilogExporter:
         suffix = self.signal_overrides.get(prop, prop)
 
         if prop:
-            return "{}_{}{}".format(prefix, suffix, index)
+            return f"{prefix}_{suffix}{index}"
         else:
-            return "{}{}".format(prefix, index)
+            return f"{prefix}{index}"
 
 
     # get property value where:
@@ -234,14 +233,14 @@ class VerilogExporter:
         elif isinstance(val, SignalNode):
             return self._get_signal_name(val)                       # reference to signal
         if type(val) == int:
-            return "{}'d{}".format(width, val)                      # specified value
+            return f"{width}'d{val}"                                # specified value
         elif ((val is True and hw_on_true) or
               (val is None and hw_on_none)):
             return self._get_signal_name(node, index, prop)         # hw input signal
         elif val is True or val is None:
-            return "{}'d{}".format(width, default)                  # default value
+            return f"{width}'d{default}"                            # default value
         else:
-            err = "ERROR: property {} of type {} not recognised".format(prop, type(val))
+            err = f"ERROR: property {prop} of type {type(val)} not recognised"
             print(err)
             return err
 
@@ -323,14 +322,14 @@ class VerilogExporter:
         Get multi-dimensional array indexing for reg/field
         """
         indexes = itertools.product(*[list(range(k)) for k in self.full_array_dimensions(node)])
-        return [''.join('[{}]'.format(k) for k in index) for index in indexes]
+        return [''.join(f'[{k}]' for k in index) for index in indexes]
 
 
     def full_array_ranges(self, node, fmt='{:>20s}') -> str:
         """
         Get multi-dimensional array indexing for reg/field as SV ranges
         """
-        return fmt.format(''.join('[{}:0]'.format(dim-1) for dim in self.full_array_dimensions(node)))
+        return fmt.format(''.join(f'[{dim-1}:0]' for dim in self.full_array_dimensions(node)))
 
 
     def _full_idx(self, node) -> str:
@@ -338,7 +337,7 @@ class VerilogExporter:
         Get multi-dimensional array indexing for node instance
         """
         l = self._full_idx_list(node)
-        return ''.join('[{}]'.format(k) for k in l)
+        return ''.join(f'[{k}]' for k in l)
 
 
     def _full_idx_list(self, node) -> list:

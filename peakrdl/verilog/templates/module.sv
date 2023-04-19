@@ -60,9 +60,11 @@ module {{get_inst_name(top_node)}}_rf #(
     input  logic  {{node.parent|full_array_ranges}}       {{signal(node, '', 'we')}},             //! Control HW write (active high)
   {%- endif %}
 
+  /* verilator lint_off SELRANGE */
   {%- if node is hw_writable and not node.get_property('next') %}
     input  logic {{node.parent|full_array_ranges}}[{{node|bit_range(from_zero=True)}}] {{signal(node, '', 'wdata')}},          //! HW write data
   {%- endif -%}
+  /* verilator lint_on SELRANGE */
 
   {%- if node is hw_readable %}
     output logic {{node.parent|full_array_ranges}}[{{node|bit_range(from_zero=True)}}] {{signal(node, '', 'q')}},              //! Current field value

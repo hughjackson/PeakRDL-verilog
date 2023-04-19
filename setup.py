@@ -13,11 +13,11 @@ with open(os.path.join("peakrdl/verilog", "__about__.py")) as f:
 setuptools.setup(
     name="peakrdl-verilog",
     version=version,
-    author="Hugh Jackson",
+    author="Hugh Jackson, Marco Merlin",
     description="Generate verilog register module from compiled SystemRDL input",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/SystemRDL/PeakRDL-verilog",
+    url="https://github.com/bat52/PeakRDL-verilog",
     packages=['peakrdl.verilog'],
     include_package_data=True,
     install_requires=[
@@ -32,6 +32,8 @@ setuptools.setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3 :: Only",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
@@ -39,7 +41,7 @@ setuptools.setup(
         "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
     ),
     project_urls={
-        "Source": "https://github.com/SystemRDL/PeakRDL-verilog",
-        "Tracker": "https://github.com/SystemRDL/PeakRDL-verilog/issues"
+        "Source": "https://github.com/bat52/PeakRDL-verilog",
+        "Tracker": "https://github.com/bat52/PeakRDL-verilog/issues"
     },
 )

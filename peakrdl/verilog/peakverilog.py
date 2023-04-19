@@ -19,11 +19,11 @@ class overrideType:
 
 
     def __str__(self):
-        return "{} => {}".format(self.prop, self.new)
+        return f'{self.prop} => {self.new}'
 
 
     def __repr__(self):
-        return "overrideType('{}={}')".format(self.prop, self.new)
+        return f"overrideType('{self.prop}={self.new}')"
 
 
 def parse_args():
@@ -58,7 +58,7 @@ def parse_args():
 
     if temp.O and temp.simulate:
         parser.print_usage()
-        print("{}: argument --override/-O: --simulate not currently supported when using override".format(os.path.basename(__file__)))
+        print(f"{os.path.basename(__file__)}: argument --override/-O: --simulate not currently supported when using override")
         sys.exit(1)
 
     return temp
@@ -73,7 +73,7 @@ def compile_rdl(infile, incl_search_paths=None, top=None):
 
 def generate(root, outdir, signal_overrides=None, bus='native'):
     '''generate the verilog'''
-    print('Info: Generating verilog for {} in {}'.format(root.inst_name, outdir))
+    print(f'Info: Generating verilog for {root.inst_name} in {outdir}')
     modules = VerilogExporter().export(
         root,
         outdir,
@@ -81,20 +81,20 @@ def generate(root, outdir, signal_overrides=None, bus='native'):
         bus_type=bus,
     )
     for m in modules:
-        print(" - Generated: " + ' '.join(os.path.join(outdir, '{}_{}'.format(m, k)) for k in ('rf.sv', 'tb.sv', 'tb.cpp')))
+        print(" - Generated: " + ' '.join(os.path.join(outdir, f'{m}_{k}') for k in ('rf.sv', 'tb.sv', 'tb.cpp')))
 
     return modules
 
 
 def run_lint(modules, outdir):
     for m in modules:
-        rf_file = os.path.join(outdir, '{}_rf.sv'.format(m))
+        rf_file = os.path.join(outdir, f'{m}_rf.sv')
 
-        print('Info: Linting {} ({})'.format(m, rf_file))
+        print(f'Info: Linting {m} ({rf_file})')
         proc = subprocess.run(['verilator', '--lint-only', "-Wall", rf_file], check=True)
 
         if proc.returncode:
-            print ("Error: verilator returned {}".format(proc.returncode))
+            print (f"Error: verilator returned {proc.returncode}")
             sys.exit(1)
         else:
             print (" - Lint Passed")
@@ -102,15 +102,15 @@ def run_lint(modules, outdir):
 
 def compile_verilog(modules, outdir, verbosity=0):
     for m in modules:
-        rf_file = os.path.join(outdir, '{}_rf.sv'.format(m))
-        tb_file = os.path.join(outdir, '{}_tb.cpp'.format(m))
+        rf_file = os.path.join(outdir, f'{m}_rf.sv')
+        tb_file = os.path.join(outdir, f'{m}_tb.cpp')
 
-        print('Info: Compiling {} ({})'.format(m, rf_file))
-        proc = subprocess.run(['verilator', '--cc', rf_file, '--exe', tb_file], check=True, capture_output=(verbosity < 2))
-        proc = subprocess.run(['make', '-C', 'obj_dir', '-f', 'V{}_rf.mk'.format(m), 'V{}_rf'.format(m)], check=True, capture_output=(verbosity < 2))
+        print(f'Info: Compiling {m} ({rf_file})')
+        proc = subprocess.run(['verilator', '--cc', rf_file, '--exe', tb_file], check=True, capture_output=verbosity < 2)
+        proc = subprocess.run(['make', '-C', 'obj_dir', '-f', f'V{m}_rf.mk', f'V{m}_rf'], check=True, capture_output=verbosity < 2)
 
         if proc.returncode:
-            print ("Error: make returned {}".format(proc.returncode))
+            print (f"Error: make returned {proc.returncode}")
             sys.exit(2)
         else:
             print(" - Compiled into ./obj_dir")
@@ -118,13 +118,13 @@ def compile_verilog(modules, outdir, verbosity=0):
 
 def simulate(modules, verbosity=0):
     for m in modules:
-        bin_file = os.path.join('obj_dir', 'V{}_rf'.format(m))
+        bin_file = os.path.join('obj_dir', f'V{m}_rf')
 
-        print('Info: Simulating {} ({})'.format(m, bin_file))
-        proc = subprocess.run([bin_file], check=True, capture_output=(verbosity < 1))
+        print(f'Info: Simulating {m} ({bin_file})')
+        proc = subprocess.run([bin_file], check=True, capture_output=verbosity < 1)
 
         if proc.returncode:
-            print ("Error: sim returned {}".format(proc.returncode))
+            print (f"Error: sim returned {proc.returncode}")
             sys.exit(4)
         else:
             print (" - Simulation Passed")
