@@ -106,8 +106,8 @@ def compile_verilog(modules, outdir, verbosity=0):
         tb_file = os.path.join(outdir, f'{m}_tb.cpp')
 
         print(f'Info: Compiling {m} ({rf_file})')
-        proc = subprocess.run(['verilator', '--cc', rf_file, '--exe', tb_file], check=True, capture_output=(verbosity < 2))
-        proc = subprocess.run(['make', '-C', 'obj_dir', '-f', f'V{m}_rf.mk', f'V{m}_rf'], check=True, capture_output=(verbosity < 2))
+        proc = subprocess.run(['verilator', '--cc', rf_file, '--exe', tb_file], check=True, capture_output=verbosity < 2)
+        proc = subprocess.run(['make', '-C', 'obj_dir', '-f', f'V{m}_rf.mk', f'V{m}_rf'], check=True, capture_output=verbosity < 2)
 
         if proc.returncode:
             print (f"Error: make returned {proc.returncode}")
