@@ -121,7 +121,7 @@ def simulate(modules, verbosity=0):
         bin_file = os.path.join('obj_dir', f'V{m}_rf')
 
         print(f'Info: Simulating {m} ({bin_file})')
-        proc = subprocess.run([bin_file], check=True, capture_output=(verbosity < 1))
+        proc = subprocess.run([bin_file], check=True, capture_output=verbosity < 1)
 
         if proc.returncode:
             print (f"Error: sim returned {proc.returncode}")
