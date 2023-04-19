@@ -5,9 +5,11 @@ Generate Verilog register model from compiled SystemRDL input
 
 ## Installing
 Install from pypi:
-    pip3 install peakrdl-verilog
+    ```pip3 install peakrdl-verilog
+    ```
 Install from github:
-    pip3 install git+https://github.com/bat52/PeakRDL-verilog.git@master
+    ```pip3 install git+https://github.com/bat52/PeakRDL-verilog.git@master
+    ```
 
 --------------------------------------------------------------------------------
 
