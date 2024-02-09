@@ -105,7 +105,7 @@ class VerilogExporter:
         bus_type: str
             bus type for the SW interface (default: native)
         """
-        self.signal_overrides = kwargs.pop("signal_overrides") or dict()
+        self.signal_overrides = kwargs.pop("signal_overrides", dict())
         bus_type = kwargs.pop("bus_type", "native")
 
         try:
